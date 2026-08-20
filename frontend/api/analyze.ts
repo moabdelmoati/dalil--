@@ -1,10 +1,6 @@
 import multer from 'multer';
 import path from 'node:path';
 import mammoth from 'mammoth';
-import { detectDocumentType, buildGroundingContext } from '../server/lib/knowledgeBase';
-import { analyzeDocument } from '../server/lib/gemini';
-import { analyzeDocumentLocal } from '../server/lib/ruleEngine';
-import { GEMINI_API_KEY } from '../server/config';
 
 export const config = {
   api: {
@@ -112,6 +108,10 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
+    const { detectDocumentType, buildGroundingContext } = await import('../server/lib/knowledgeBase');
+    const { analyzeDocumentLocal } = await import('../server/lib/ruleEngine');
+    const { GEMINI_API_KEY } = await import('../server/config');
+
     let contentText: string | undefined;
     let pageCount: number;
 
@@ -136,6 +136,7 @@ export default async function handler(req: any, res: any) {
 
     if (GEMINI_API_KEY && GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY_HERE') {
       try {
+        const { analyzeDocument } = await import('../server/lib/gemini');
         const documentTextPreview = contentText ?? '';
         const documentType = detectDocumentType(`${file.originalname} ${documentTextPreview}`);
         const groundContext = buildGroundingContext(documentType);
@@ -166,10 +167,10 @@ export default async function handler(req: any, res: any) {
     });
 
     res.status(200).json(localResult);
-  } catch (error) {
+  } catch (error: any) {
     console.error('analyze error:', error);
     res.status(500).json({
-      error: 'حدث خطأ أثناء تحليل المستند. حاول مرة أخرى بعد قليل.',
+      error: error?.message || 'حدث خطأ أثناء تحليل المستند. حاول مرة أخرى بعد قليل.',
     });
   }
 }

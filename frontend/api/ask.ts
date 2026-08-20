@@ -1,8 +1,3 @@
-import { detectDocumentType, buildGroundingContext } from '../server/lib/knowledgeBase';
-import { askDocument } from '../server/lib/gemini';
-import { askDocumentLocal } from '../server/lib/ruleEngine';
-import { GEMINI_API_KEY } from '../server/config';
-
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -19,6 +14,10 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
+    const { detectDocumentType, buildGroundingContext } = await import('../server/lib/knowledgeBase');
+    const { askDocumentLocal } = await import('../server/lib/ruleEngine');
+    const { GEMINI_API_KEY } = await import('../server/config');
+
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
     const documentText = typeof body.documentText === 'string' ? body.documentText : '';
     const question = typeof body.question === 'string' ? body.question.trim() : '';
@@ -36,6 +35,7 @@ export default async function handler(req: any, res: any) {
 
     if (GEMINI_API_KEY && GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY_HERE') {
       try {
+        const { askDocument } = await import('../server/lib/gemini');
         const groundContext = buildGroundingContext(documentType);
         const history = Array.isArray(body.history)
           ? body.history
@@ -66,8 +66,8 @@ export default async function handler(req: any, res: any) {
     });
 
     res.status(200).json({ answer: localAnswer });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Ask error:', error);
-    res.status(500).json({ error: 'حدث خطأ أثناء الإجابة على سؤالك. حاول مرة أخرى.' });
+    res.status(500).json({ error: error?.message || 'حدث خطأ أثناء الإجابة على سؤالك.' });
   }
 }
