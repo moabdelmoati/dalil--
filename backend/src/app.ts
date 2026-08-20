@@ -3,12 +3,9 @@ import express, { type Express } from 'express';
 import cors from 'cors';
 import { analyzeRouter } from './routes/analyze.ts';
 import { askRouter } from './routes/ask.ts';
-import { loadKnowledgeBase } from './lib/knowledgeBase.ts';
 import { initGemini } from './lib/gemini.ts';
 
 export function createApp(): Express {
-  loadKnowledgeBase();
-
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     console.error('Missing GEMINI_API_KEY. Set it via backend/.env or the platform environment.');

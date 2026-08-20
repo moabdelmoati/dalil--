@@ -1,19 +1,10 @@
-import fs from 'node:fs';
-import path from 'node:path';
-
 type KnowledgeBase = Record<string, unknown>;
 
-let kb: KnowledgeBase | null = null;
+import kbData from '../../data/legal-knowledge-base.json' with { type: 'json' };
 
-export function loadKnowledgeBase(): void {
-  const filePath = path.resolve(import.meta.dirname, '../../data/legal-knowledge-base.json');
-  kb = JSON.parse(fs.readFileSync(filePath, 'utf8')) as KnowledgeBase;
-}
+const kb: KnowledgeBase = kbData;
 
 export function getKnowledgeBase(): KnowledgeBase {
-  if (!kb) {
-    throw new Error('Knowledge base not loaded. Call loadKnowledgeBase() at startup.');
-  }
   return kb;
 }
 
