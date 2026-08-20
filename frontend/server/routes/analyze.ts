@@ -3,7 +3,9 @@ import multer from 'multer';
 import path from 'node:path';
 import mammoth from 'mammoth';
 import { buildGroundingContext, detectDocumentType } from '../lib/knowledgeBase.ts';
-import { analyzeDocument, getGeminiErrorStatus, QUOTA_ERROR_MESSAGE } from '../lib/gemini.ts';
+import { analyzeDocument, getGeminiErrorStatus } from '../lib/gemini.ts';
+import { analyzeDocumentLocal } from '../lib/ruleEngine.ts';
+import { GEMINI_API_KEY } from '../config.ts';
 
 export const analyzeRouter = Router();
 
@@ -61,6 +63,11 @@ function handleUpload(req: Request, res: Response, next: NextFunction): void {
   });
 }
 
+function isGeminiEnabled(): boolean {
+  const key = GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+  return Boolean(key && key.trim() !== '' && key !== 'YOUR_GEMINI_API_KEY_HERE');
+}
+
 analyzeRouter.post('/analyze', handleUpload, async (req: Request, res: Response) => {
   try {
     const file = req.file;
@@ -89,6 +96,14 @@ analyzeRouter.post('/analyze', handleUpload, async (req: Request, res: Response)
 
     if (mimeType.startsWith('image/') || mimeType === 'application/pdf') {
       pageCount = estimatePageCount(file.buffer, mimeType);
+      if (mimeType === 'application/pdf') {
+        // Try extracting embedded text if available
+        const rawString = file.buffer.toString('utf-8');
+        const cleanText = rawString.replace(/[^\u0621-\u064A\s\d\.,]/g, ' ').replace(/\s+/g, ' ').trim();
+        if (cleanText.length > 50) {
+          contentText = cleanText;
+        }
+      }
     } else {
       const extracted = await mammoth.extractRawText({ buffer: file.buffer });
       contentText = extracted.value;
@@ -99,27 +114,41 @@ analyzeRouter.post('/analyze', handleUpload, async (req: Request, res: Response)
       pageCount = estimatePageCount(file.buffer, mimeType, contentText);
     }
 
-    const documentTextPreview = contentText ?? '';
-    const documentType = detectDocumentType(`${file.originalname} ${documentTextPreview}`);
-    const groundContext = buildGroundingContext(documentType);
+    // 1. Try Gemini AI if enabled
+    if (isGeminiEnabled()) {
+      try {
+        const documentTextPreview = contentText ?? '';
+        const documentType = detectDocumentType(`${file.originalname} ${documentTextPreview}`);
+        const groundContext = buildGroundingContext(documentType);
 
-    const result = await analyzeDocument({
+        const result = await analyzeDocument({
+          fileName: file.originalname,
+          groundContext,
+          pageCount,
+          contentText,
+          inlineData:
+            contentText === undefined
+              ? { mimeType, data: file.buffer.toString('base64') }
+              : undefined,
+        });
+
+        res.json(result);
+        return;
+      } catch (geminiError) {
+        console.warn('Gemini API failed, falling back to local rule engine:', geminiError);
+      }
+    }
+
+    // 2. Fallback to Local Rule-Based Analysis Engine (Works 100% offline & without Gemini)
+    const textToAnalyze = contentText || `مستند: ${file.originalname}`;
+    const localResult = analyzeDocumentLocal({
+      text: textToAnalyze,
       fileName: file.originalname,
-      groundContext,
       pageCount,
-      contentText,
-      inlineData:
-        contentText === undefined
-          ? { mimeType, data: file.buffer.toString('base64') }
-          : undefined,
     });
 
-    res.json(result);
+    res.json(localResult);
   } catch (error) {
-    if (getGeminiErrorStatus(error) === 429) {
-      res.status(429).json({ error: QUOTA_ERROR_MESSAGE });
-      return;
-    }
     console.error('analyze error:', error);
     res.status(500).json({
       error: 'حدث خطأ أثناء تحليل المستند. حاول مرة أخرى بعد قليل.',
