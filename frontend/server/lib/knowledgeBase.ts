@@ -1,7 +1,4 @@
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
-const kbData = require('../data/legal-knowledge-base.json');
+import { kbData } from '../data/knowledgeBaseData.ts';
 
 type KnowledgeBase = Record<string, unknown>;
 
