@@ -33,19 +33,21 @@ npm run dev
 
 ## النشر على Vercel
 
-المشروع منشور على **https://dalil-lemon.vercel.app/** (الواجهة)، ويتكون من مشروعين على Vercel:
+المشروع منشور على **https://dalil-lemon.vercel.app/** — **مشروع واحد** يحتوي الواجهة + الـ API (serverless) على نفس الدومين، والمفتاح سيرفر-سايد فقط.
 
-### 1) مشروع الواجهة (SPA)
 - **Root Directory**: `frontend`
-- **Framework**: Vite (تلقائي) — **Output Directory**: `dist`
-- **Environment Variables**: `VITE_API_URL` = رابط مشروع الـ backend (مثال: `https://dalil-backend.vercel.app`)
-- لو `VITE_API_URL` فاضي (محلياً)، الواجهة بتستخدم نفس الـ origin مع proxy للـ dev server.
+- **Framework**: Vite — **Output Directory**: `dist`
+- `frontend/vercel.json` يضبط:
+  - أمر البناء `npm run build` → يكومبايل الـ backend (`backend/dist` + قاعدة المعرفة) ثم الواجهة لـ `dist/`.
+  - `frontend/api/index.ts` = تطبيق Express نفسه كـ serverless function (default export).
+  - إعادة توجيه `/api/*` للفنكشن، وأي مسار تاني لصفحة الـ SPA.
+- الواجهة بتستدعي `/api/analyze` و `/api/ask` نسبياً (نفس الدومين) — المفتاح ما بينزلش للـ browser أبداً.
+- محلياً، متغير `VITE_API_URL` اختياري (لو فاضي بيستخدم نفس الـ origin مع الـ dev proxy).
 
-### 2) مشروع الـ backend (serverless functions)
-- **Root Directory**: `backend`
-- **Framework**: Other (لا يوجد output — مجرد functions)
-- `backend/vercel.json` يضبط: البناء `npm run build` (يكومبايل الـ backend لـ `backend/dist`)، والفنكشن `api/index.ts` (تطبيق Express نفسه)، وإعادة توجيه `/api/*` له.
-- **Environment Variables**: `GEMINI_API_KEY` (مفتاح Gemini) و`GEMINI_MODEL=gemini-3.5-flash` اختياري.
+### متغيرات البيئة على Vercel
+- `GEMINI_API_KEY` — مفتاح Gemini الخاص بك (سيرفر-سايد فقط).
+- `GEMINI_MODEL` — اختياري (الافتراضي `gemini-3.5-flash`).
+- لا حاجة لأي متغير بادئته `VITE_` للمفتاح — المتغيرات العادية متاحة للفنكشن تلقائياً عبر `process.env`.
 
 ملاحظة: حد حجم الـ request على Vercel ~4.5MB، فالمستندات الكبيرة (أكثر من ~3MB) هتفشل على النسخة المنشورة بينما تشتغل محلياً. النشر من الـ Git: أي push لـ `main` يعمل redeploy تلقائي.
 
