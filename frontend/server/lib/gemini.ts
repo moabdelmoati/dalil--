@@ -1,5 +1,3 @@
-import { GoogleGenAI } from '@google/genai';
-import type { Content, Part } from '@google/genai';
 import type { AnalysisResult, AskMessage } from '../types';
 import { GEMINI_API_KEY, GEMINI_MODEL } from '../config';
 import {
@@ -11,21 +9,30 @@ import {
   sanitizeAnalysisResult,
 } from './prompts';
 
-let ai: GoogleGenAI | null = null;
+let ai: any = null;
+let GoogleGenAIClass: any = null;
 
-export function initGemini(apiKey: string): void {
-  ai = new GoogleGenAI({ apiKey });
+export async function initGemini(apiKey: string): Promise<void> {
+  if (!GoogleGenAIClass) {
+    const mod = await import('@google/genai');
+    GoogleGenAIClass = mod.GoogleGenAI;
+  }
+  ai = new GoogleGenAIClass({ apiKey });
 }
 
 function model(): string {
   return GEMINI_MODEL || 'gemini-2.5-flash';
 }
 
-function getClient(): GoogleGenAI {
+async function getClient(): Promise<any> {
   if (!ai) {
     const key = GEMINI_API_KEY || process.env.GEMINI_API_KEY;
-    if (key) {
-      ai = new GoogleGenAI({ apiKey: key });
+    if (key && key !== 'YOUR_GEMINI_API_KEY_HERE') {
+      if (!GoogleGenAIClass) {
+        const mod = await import('@google/genai');
+        GoogleGenAIClass = mod.GoogleGenAI;
+      }
+      ai = new GoogleGenAIClass({ apiKey: key });
     } else {
       throw new Error('Gemini client not initialized. Set GEMINI_API_KEY in server/config.ts or via environment variables.');
     }
@@ -50,8 +57,8 @@ export interface AnalyzeInput {
 }
 
 export async function analyzeDocument(input: AnalyzeInput): Promise<AnalysisResult> {
-  const client = getClient();
-  const parts: Part[] = [
+  const client = await getClient();
+  const parts: any[] = [
     {
       text: buildAnalyzeUserPrompt({
         fileName: input.fileName,
@@ -65,7 +72,7 @@ export async function analyzeDocument(input: AnalyzeInput): Promise<AnalysisResu
     parts.push({ inlineData: input.inlineData });
   }
 
-  const contents: Content[] = [{ role: 'user', parts }];
+  const contents: any[] = [{ role: 'user', parts }];
 
   const response = await client.models.generateContent({
     model: model(),
@@ -108,9 +115,9 @@ export interface AskInput {
 }
 
 export async function askDocument(input: AskInput): Promise<string> {
-  const client = getClient();
+  const client = await getClient();
 
-  const contents: Content[] = input.history.map((message) => ({
+  const contents: any[] = input.history.map((message) => ({
     role: message.role === 'user' ? 'user' : 'model',
     parts: [{ text: message.text }],
   }));
