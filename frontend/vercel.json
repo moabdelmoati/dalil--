@@ -1,24 +1,6 @@
 {
   "buildCommand": "npm run build",
-  "functions": {
-    "api/analyze.js": { "maxDuration": 60 },
-    "api/ask.js": { "maxDuration": 60 },
-    "api/health.js": { "maxDuration": 10 },
-    "api/index.js": { "maxDuration": 10 }
-  },
   "rewrites": [
-    {
-      "source": "/api/analyze",
-      "destination": "/api/analyze.js"
-    },
-    {
-      "source": "/api/ask",
-      "destination": "/api/ask.js"
-    },
-    {
-      "source": "/api/health",
-      "destination": "/api/health.js"
-    },
     {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
