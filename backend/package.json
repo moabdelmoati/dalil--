@@ -7,7 +7,7 @@
     "node": ">=23.6"
   },
   "scripts": {
-    "dev": "node --watch src/server.ts",
+    "dev": "node --watch-path=./src src/server.ts",
     "start": "node src/server.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

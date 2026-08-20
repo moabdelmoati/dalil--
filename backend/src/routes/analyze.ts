@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'node:path';
 import mammoth from 'mammoth';
 import { buildGroundingContext, detectDocumentType } from '../lib/knowledgeBase.ts';
-import { analyzeDocument } from '../lib/gemini.ts';
+import { analyzeDocument, getGeminiErrorStatus, QUOTA_ERROR_MESSAGE } from '../lib/gemini.ts';
 
 export const analyzeRouter = Router();
 
@@ -116,6 +116,10 @@ analyzeRouter.post('/analyze', handleUpload, async (req: Request, res: Response)
 
     res.json(result);
   } catch (error) {
+    if (getGeminiErrorStatus(error) === 429) {
+      res.status(429).json({ error: QUOTA_ERROR_MESSAGE });
+      return;
+    }
     console.error('analyze error:', error);
     res.status(500).json({
       error: 'حدث خطأ أثناء تحليل المستند. حاول مرة أخرى بعد قليل.',

@@ -27,6 +27,14 @@ function getClient(): GoogleGenAI {
   return ai;
 }
 
+export function getGeminiErrorStatus(error: unknown): number | null {
+  const status = (error as { status?: unknown })?.status;
+  return typeof status === 'number' ? status : null;
+}
+
+export const QUOTA_ERROR_MESSAGE =
+  'وصلت للحد الأقصى للاستخدام المجاني لليوم. حاول مرة أخرى بعد قليل أو غداً.';
+
 export interface AnalyzeInput {
   fileName: string;
   groundContext: string;

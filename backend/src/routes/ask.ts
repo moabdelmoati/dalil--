@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { buildGroundingContext, detectDocumentType } from '../lib/knowledgeBase.ts';
-import { askDocument } from '../lib/gemini.ts';
+import { askDocument, getGeminiErrorStatus, QUOTA_ERROR_MESSAGE } from '../lib/gemini.ts';
 import type { AskRequest } from '../types.ts';
 
 export const askRouter = Router();
@@ -40,6 +40,10 @@ askRouter.post('/ask', async (req: Request, res: Response) => {
 
     res.json({ answer });
   } catch (error) {
+    if (getGeminiErrorStatus(error) === 429) {
+      res.status(429).json({ error: QUOTA_ERROR_MESSAGE });
+      return;
+    }
     console.error('ask error:', error);
     res.status(500).json({ error: 'حدث خطأ أثناء الإجابة على سؤالك. حاول مرة أخرى.' });
   }
