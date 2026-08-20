@@ -1,0 +1,146 @@
+import { GoogleGenAI } from '@google/genai';
+import type { Content, Part } from '@google/genai';
+import type { AnalysisResult, AskMessage } from '../types.ts';
+import { GEMINI_API_KEY, GEMINI_MODEL } from '../config.ts';
+import {
+  ANALYZE_RESPONSE_SCHEMA,
+  ANALYZE_SYSTEM_INSTRUCTION,
+  ASK_SYSTEM_INSTRUCTION,
+  buildAnalyzeUserPrompt,
+  buildAskUserPrompt,
+  sanitizeAnalysisResult,
+} from './prompts.ts';
+
+let ai: GoogleGenAI | null = null;
+
+export function initGemini(apiKey: string): void {
+  ai = new GoogleGenAI({ apiKey });
+}
+
+function model(): string {
+  return GEMINI_MODEL || 'gemini-2.5-flash';
+}
+
+function getClient(): GoogleGenAI {
+  if (!ai) {
+    const key = GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+    if (key) {
+      ai = new GoogleGenAI({ apiKey: key });
+    } else {
+      throw new Error('Gemini client not initialized. Set GEMINI_API_KEY in server/config.ts or via environment variables.');
+    }
+  }
+  return ai;
+}
+
+export function getGeminiErrorStatus(error: unknown): number | null {
+  const status = (error as { status?: unknown })?.status;
+  return typeof status === 'number' ? status : null;
+}
+
+export const QUOTA_ERROR_MESSAGE =
+  'وصلت للحد الأقصى للاستخدام المجاني لليوم. حاول مرة أخرى بعد قليل أو غداً.';
+
+export interface AnalyzeInput {
+  fileName: string;
+  groundContext: string;
+  pageCount: number;
+  contentText?: string;
+  inlineData?: { mimeType: string; data: string };
+}
+
+export async function analyzeDocument(input: AnalyzeInput): Promise<AnalysisResult> {
+  const client = getClient();
+  const parts: Part[] = [
+    {
+      text: buildAnalyzeUserPrompt({
+        fileName: input.fileName,
+        groundContext: input.groundContext,
+        pageCount: input.pageCount,
+        contentText: input.contentText,
+      }),
+    },
+  ];
+  if (input.inlineData) {
+    parts.push({ inlineData: input.inlineData });
+  }
+
+  const contents: Content[] = [{ role: 'user', parts }];
+
+  const response = await client.models.generateContent({
+    model: model(),
+    contents,
+    config: {
+      systemInstruction: ANALYZE_SYSTEM_INSTRUCTION,
+      responseMimeType: 'application/json',
+      responseSchema: ANALYZE_RESPONSE_SCHEMA,
+      maxOutputTokens: 65536,
+    },
+  });
+
+  const text = response.text;
+  if (!text) {
+    throw new Error('Gemini returned an empty response for document analysis.');
+  }
+
+  let parsed: Partial<AnalysisResult>;
+  try {
+    parsed = JSON.parse(text) as Partial<AnalysisResult>;
+  } catch {
+    throw new Error('Gemini returned invalid JSON for document analysis.');
+  }
+
+  const sanitized = sanitizeAnalysisResult(parsed);
+  if (!sanitized) {
+    throw new Error('Gemini response could not be parsed into the expected analysis shape.');
+  }
+
+  sanitized.pageCount = input.pageCount;
+  return sanitized;
+}
+
+export interface AskInput {
+  documentText: string;
+  documentType: string;
+  question: string;
+  history: AskMessage[];
+  groundContext: string;
+}
+
+export async function askDocument(input: AskInput): Promise<string> {
+  const client = getClient();
+
+  const contents: Content[] = input.history.map((message) => ({
+    role: message.role === 'user' ? 'user' : 'model',
+    parts: [{ text: message.text }],
+  }));
+
+  contents.push({
+    role: 'user',
+    parts: [
+      {
+        text: buildAskUserPrompt({
+          documentText: input.documentText,
+          documentType: input.documentType,
+          groundContext: input.groundContext,
+          question: input.question,
+        }),
+      },
+    ],
+  });
+
+  const response = await client.models.generateContent({
+    model: model(),
+    contents,
+    config: {
+      systemInstruction: ASK_SYSTEM_INSTRUCTION,
+      maxOutputTokens: 8192,
+    },
+  });
+
+  const text = response.text;
+  if (!text) {
+    throw new Error('Gemini returned an empty answer.');
+  }
+  return text.trim();
+}

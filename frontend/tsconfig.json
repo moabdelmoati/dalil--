@@ -19,6 +19,6 @@
     "allowImportingTsExtensions": true,
     "useDefineForClassFields": true
   },
-  "include": ["src/**/*", "vite.config.ts"],
+  "include": ["src/**/*", "server/**/*", "api/**/*", "vite.config.ts"],
   "exclude": ["node_modules", "dist"]
 }
