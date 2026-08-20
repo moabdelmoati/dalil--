@@ -1,17 +1,13 @@
 {
   "buildCommand": "npm run build",
   "functions": {
-    "api/index.ts": {
+    "api/*.ts": {
       "maxDuration": 60
     }
   },
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]

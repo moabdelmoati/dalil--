@@ -1,6 +1,9 @@
-type KnowledgeBase = Record<string, unknown>;
+import { createRequire } from 'node:module';
 
-import kbData from '../data/legal-knowledge-base.json' with { type: 'json' };
+const require = createRequire(import.meta.url);
+const kbData = require('../data/legal-knowledge-base.json');
+
+type KnowledgeBase = Record<string, unknown>;
 
 const kb: KnowledgeBase = kbData as unknown as KnowledgeBase;
 

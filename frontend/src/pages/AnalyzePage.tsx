@@ -28,7 +28,12 @@ export function AnalyzePage() {
       const formData = new FormData();
       formData.append('file', file);
       const response = await fetch(`${API_BASE_URL}/api/analyze`, { method: 'POST', body: formData });
-      const data = await response.json();
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch {
+        // response was not JSON
+      }
       if (!response.ok) {
         setError(data && data.error ? data.error : t('analyze.error.generic'));
         setProcessing(false);
@@ -36,7 +41,8 @@ export function AnalyzePage() {
       }
       setAnalysis(data as AnalysisResult, file.name);
       navigate('/contract');
-    } catch {
+    } catch (err) {
+      console.error('Analysis error:', err);
       setError(t('analyze.error.server'));
       setProcessing(false);
     }

@@ -35,11 +35,17 @@ export function AskPage() {
           history: messages.map((message) => ({ role: message.role, text: message.text })),
         }),
       });
-      const data = await response.json();
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch {
+        // response was not JSON
+      }
       if (!response.ok) throw new Error(data && data.error ? data.error : t('ask.error.generic'));
-      setMessages([...next, { role: 'model', text: data.answer }]);
-    } catch {
-      setMessages([...next, { role: 'model', text: t('ask.error.server') }]);
+      setMessages([...next, { role: 'model', text: data?.answer || 'لم يتم استلام إجابة.' }]);
+    } catch (err: any) {
+      console.error('Ask error:', err);
+      setMessages([...next, { role: 'model', text: err?.message || t('ask.error.server') }]);
     } finally {
       setLoading(false);
     }
