@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { AlertTriangle, ArrowLeft, FileText, LockKeyhole, UploadCloud } from 'lucide-react';
 import { Button } from '@/lib/ui';
 import { useAnalysis, type AnalysisResult } from '@/lib/analysis-store';
+import { API_BASE_URL } from '@/lib/api';
 import { useLanguage } from '@/lib/i18n';
 
 export function AnalyzePage() {
@@ -26,7 +27,7 @@ export function AnalyzePage() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const response = await fetch('/api/analyze', { method: 'POST', body: formData });
+      const response = await fetch(`${API_BASE_URL}/api/analyze`, { method: 'POST', body: formData });
       const data = await response.json();
       if (!response.ok) {
         setError(data && data.error ? data.error : t('analyze.error.generic'));

@@ -1,7 +1,5 @@
 {
-  "framework": null,
   "buildCommand": "npm run build",
-  "outputDirectory": "public",
   "functions": {
     "api/index.ts": {
       "maxDuration": 60
@@ -11,10 +9,6 @@
     {
       "source": "/api/(.*)",
       "destination": "/api/index"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
     }
   ]
 }

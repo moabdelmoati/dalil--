@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, Redirect } from 'wouter';
 import { ArrowLeft, FileText, Paperclip } from 'lucide-react';
 import { useAnalysis } from '@/lib/analysis-store';
+import { API_BASE_URL } from '@/lib/api';
 import { useLanguage } from '@/lib/i18n';
 
 type ChatMessage = { role: 'user' | 'model'; text: string };
@@ -24,7 +25,7 @@ export function AskPage() {
     setMessages(next);
     setLoading(true);
     try {
-      const response = await fetch('/api/ask', {
+      const response = await fetch(`${API_BASE_URL}/api/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

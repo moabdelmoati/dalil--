@@ -33,16 +33,19 @@ npm run dev
 
 ## النشر على Vercel
 
-الموقع منشور على **https://dalil-lemon.vercel.app/** — ومجهز للنشر كالتالي (مشروع واحد من جذر المستودع):
+المشروع منشور على **https://dalil-lemon.vercel.app/** (الواجهة)، ويتكون من مشروعين على Vercel:
 
-1. اربط المستودع بـ Vercel (أو استخدم `vercel` CLI من جذر المشروع).
-2. في إعدادات المشروع على Vercel أضف المتغيرات البيئية:
-   - `GEMINI_API_KEY` — مفتاح Gemini الخاص بك.
-   - `GEMINI_MODEL` — اختياري (الافتراضي `gemini-3.5-flash`).
-3. `vercel.json` في الجذر يضبط:
-   - أمر البناء `npm run build` (يبني الـ backend لـ `backend/dist` ثم الـ frontend لـ `public/`).
-   - `api/index.ts` يعرّف تطبيق Express نفسه كـ serverless function يخدم `/api/*`.
-   - إعادة توجيه `/api/*` للفنكشن، وأي مسار تاني لصفحة الـ SPA.
+### 1) مشروع الواجهة (SPA)
+- **Root Directory**: `frontend`
+- **Framework**: Vite (تلقائي) — **Output Directory**: `dist`
+- **Environment Variables**: `VITE_API_URL` = رابط مشروع الـ backend (مثال: `https://dalil-backend.vercel.app`)
+- لو `VITE_API_URL` فاضي (محلياً)، الواجهة بتستخدم نفس الـ origin مع proxy للـ dev server.
+
+### 2) مشروع الـ backend (serverless functions)
+- **Root Directory**: `backend`
+- **Framework**: Other (لا يوجد output — مجرد functions)
+- `backend/vercel.json` يضبط: البناء `npm run build` (يكومبايل الـ backend لـ `backend/dist`)، والفنكشن `api/index.ts` (تطبيق Express نفسه)، وإعادة توجيه `/api/*` له.
+- **Environment Variables**: `GEMINI_API_KEY` (مفتاح Gemini) و`GEMINI_MODEL=gemini-3.5-flash` اختياري.
 
 ملاحظة: حد حجم الـ request على Vercel ~4.5MB، فالمستندات الكبيرة (أكثر من ~3MB) هتفشل على النسخة المنشورة بينما تشتغل محلياً. النشر من الـ Git: أي push لـ `main` يعمل redeploy تلقائي.
 
