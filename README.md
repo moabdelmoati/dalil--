@@ -27,7 +27,7 @@ npm run dev
 
 > **مهم**: قبل تشغيل الـ backend، انسخ `backend/.env.example` إلى `backend/.env` وضع مفتاح Gemini الخاص بك في `GEMINI_API_KEY` (مفتاح مجاني من Google AI Studio: https://aistudio.google.com/apikey).
 >
-> ملاحظة: نموذج `gemini-2.5-flash` لم يعد متاحاً للمفاتيح الجديدة — الافتراضي في `.env.example` هو `gemini-3.6-flash`، ويمكن تغييره من متغير `GEMINI_MODEL` في `backend/.env`.
+> **الكوتة المجانية**: كل موديل عنده حد يومي مستقل (20 طلب/يوم على الحساب المجاني). لو ظهرت رسالة "وصلت للحد الأقصى للاستخدام المجاني لليوم"، غيّر `GEMINI_MODEL` في `backend/.env` لموديل آخر متاح لمفتاحك (مثل `gemini-3.5-flash`)، أو انتظر إعادة تعيين الكوتة في اليوم التالي. الافتراضي في `.env.example` هو `gemini-3.5-flash`.
 
 ## كيف يعمل
 
