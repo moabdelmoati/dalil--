@@ -2,6 +2,9 @@
   "name": "dalil",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20.11"
+  },
   "workspaces": ["frontend", "backend"],
   "scripts": {
     "build": "npm run build --workspace=backend && npm run build --workspace=frontend",
