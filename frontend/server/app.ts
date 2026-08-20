@@ -1,10 +1,10 @@
 import 'dotenv/config';
 import express, { type Express } from 'express';
 import cors from 'cors';
-import { analyzeRouter } from './routes/analyze.ts';
-import { askRouter } from './routes/ask.ts';
-import { initGemini } from './lib/gemini.ts';
-import { GEMINI_API_KEY } from './config.ts';
+import { analyzeRouter } from './routes/analyze';
+import { askRouter } from './routes/ask';
+import { initGemini } from './lib/gemini';
+import { GEMINI_API_KEY } from './config';
 
 export function createApp(): Express {
   if (GEMINI_API_KEY && GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY_HERE') {

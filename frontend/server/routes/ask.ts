@@ -1,9 +1,9 @@
 import { Router, type Request, type Response } from 'express';
-import { buildGroundingContext, detectDocumentType } from '../lib/knowledgeBase.ts';
-import { askDocument } from '../lib/gemini.ts';
-import { askDocumentLocal } from '../lib/ruleEngine.ts';
-import { GEMINI_API_KEY } from '../config.ts';
-import type { AskRequest } from '../types.ts';
+import { buildGroundingContext, detectDocumentType } from '../lib/knowledgeBase';
+import { askDocument } from '../lib/gemini';
+import { askDocumentLocal } from '../lib/ruleEngine';
+import { GEMINI_API_KEY } from '../config';
+import type { AskRequest } from '../types';
 
 export const askRouter = Router();
 

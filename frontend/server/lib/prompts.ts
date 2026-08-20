@@ -1,4 +1,4 @@
-import type { AnalysisResult, ClauseTone } from '../types.ts';
+import type { AnalysisResult, ClauseTone } from '../types';
 
 export const SYSTEM_VOICE_RULES = [
   'لا تصرّح أبدًا أن أي بند غير قانوني أو باطل بشكل قاطع.',

@@ -1,4 +1,4 @@
-import { kbData } from '../data/knowledgeBaseData.ts';
+import { kbData } from '../data/knowledgeBaseData';
 
 type KnowledgeBase = Record<string, unknown>;
 

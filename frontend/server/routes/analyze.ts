@@ -2,10 +2,10 @@ import { Router, type NextFunction, type Request, type Response } from 'express'
 import multer from 'multer';
 import path from 'node:path';
 import mammoth from 'mammoth';
-import { buildGroundingContext, detectDocumentType } from '../lib/knowledgeBase.ts';
-import { analyzeDocument, getGeminiErrorStatus } from '../lib/gemini.ts';
-import { analyzeDocumentLocal } from '../lib/ruleEngine.ts';
-import { GEMINI_API_KEY } from '../config.ts';
+import { buildGroundingContext, detectDocumentType } from '../lib/knowledgeBase';
+import { analyzeDocument, getGeminiErrorStatus } from '../lib/gemini';
+import { analyzeDocumentLocal } from '../lib/ruleEngine';
+import { GEMINI_API_KEY } from '../config';
 
 export const analyzeRouter = Router();
 

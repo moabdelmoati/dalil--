@@ -1,5 +1,5 @@
-import { getKnowledgeBase, detectDocumentType } from './knowledgeBase.ts';
-import type { AnalysisClause, AnalysisResult, ClauseTone } from '../types.ts';
+import { getKnowledgeBase, detectDocumentType } from './knowledgeBase';
+import type { AnalysisClause, AnalysisResult, ClauseTone } from '../types';
 
 interface KBClause {
   id?: string;

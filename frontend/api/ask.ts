@@ -1,7 +1,7 @@
-import { detectDocumentType, buildGroundingContext } from '../server/lib/knowledgeBase.ts';
-import { askDocument } from '../server/lib/gemini.ts';
-import { askDocumentLocal } from '../server/lib/ruleEngine.ts';
-import { GEMINI_API_KEY } from '../server/config.ts';
+import { detectDocumentType, buildGroundingContext } from '../server/lib/knowledgeBase';
+import { askDocument } from '../server/lib/gemini';
+import { askDocumentLocal } from '../server/lib/ruleEngine';
+import { GEMINI_API_KEY } from '../server/config';
 
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');

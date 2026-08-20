@@ -1,10 +1,10 @@
 import multer from 'multer';
 import path from 'node:path';
 import mammoth from 'mammoth';
-import { detectDocumentType, buildGroundingContext } from '../server/lib/knowledgeBase.ts';
-import { analyzeDocument } from '../server/lib/gemini.ts';
-import { analyzeDocumentLocal } from '../server/lib/ruleEngine.ts';
-import { GEMINI_API_KEY } from '../server/config.ts';
+import { detectDocumentType, buildGroundingContext } from '../server/lib/knowledgeBase';
+import { analyzeDocument } from '../server/lib/gemini';
+import { analyzeDocumentLocal } from '../server/lib/ruleEngine';
+import { GEMINI_API_KEY } from '../server/config';
 
 export const config = {
   api: {

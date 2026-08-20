@@ -16,7 +16,6 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "allowImportingTsExtensions": true,
     "useDefineForClassFields": true
   },
   "include": ["src/**/*", "server/**/*", "api/**/*", "vite.config.ts"],

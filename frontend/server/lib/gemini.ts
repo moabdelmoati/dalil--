@@ -1,7 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import type { Content, Part } from '@google/genai';
-import type { AnalysisResult, AskMessage } from '../types.ts';
-import { GEMINI_API_KEY, GEMINI_MODEL } from '../config.ts';
+import type { AnalysisResult, AskMessage } from '../types';
+import { GEMINI_API_KEY, GEMINI_MODEL } from '../config';
 import {
   ANALYZE_RESPONSE_SCHEMA,
   ANALYZE_SYSTEM_INSTRUCTION,
@@ -9,7 +9,7 @@ import {
   buildAnalyzeUserPrompt,
   buildAskUserPrompt,
   sanitizeAnalysisResult,
-} from './prompts.ts';
+} from './prompts';
 
 let ai: GoogleGenAI | null = null;
 
