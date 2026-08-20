@@ -59,7 +59,6 @@ export async function analyzeDocument(input: AnalyzeInput): Promise<AnalysisResu
       responseMimeType: 'application/json',
       responseSchema: ANALYZE_RESPONSE_SCHEMA,
       maxOutputTokens: 65536,
-      thinkingConfig: { thinkingBudget: 0 },
     },
   });
 
@@ -120,7 +119,6 @@ export async function askDocument(input: AskInput): Promise<string> {
     config: {
       systemInstruction: ASK_SYSTEM_INSTRUCTION,
       maxOutputTokens: 8192,
-      thinkingConfig: { thinkingBudget: 0 },
     },
   });
 
