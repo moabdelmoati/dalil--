@@ -13,7 +13,7 @@ esbuild.buildSync({
   platform: 'node',
   target: 'node18',
   format: 'esm',
-  external: ['@google/genai', 'mammoth', 'multer', 'dotenv', 'express', 'cors'],
+  external: ['@google/genai', 'mammoth', 'multer', 'dotenv', 'express', 'cors', 'pdf-parse'],
 });
 
 console.log('Successfully bundled serverless API functions to api/');
