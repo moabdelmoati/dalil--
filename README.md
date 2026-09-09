@@ -1,7 +1,7 @@
 # دليل | Dalil ⚖️🇪🇬
 ### المساعد القانوني الذكي لفحص العقود والمستندات القانونية
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=for-the-badge&logo=vercel)](https://dalil-frontend-lake.vercel.app/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=for-the-badge&logo=vercel)](https://dalileg.vercel.app/)
 [![Gemini 3.6 Flash](https://img.shields.io/badge/Google%20Gemini-3.6%20Flash-4285F4?style=for-the-badge&logo=google)](https://aistudio.google.com/)
 [![Firebase](https://img.shields.io/badge/Firebase-Auth%20%26%20Firestore-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
 [![Google Cloud](https://img.shields.io/badge/Google%20Cloud-Storage%20%26%20Security-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white)](https://cloud.google.com/)
@@ -13,7 +13,7 @@
 ---
 
 ## 🌟 الرابط المباشر للمنصة
-🌐 **[https://dalil-frontend-lake.vercel.app/](https://dalil-frontend-lake.vercel.app/)**
+🌐 **[https://dalileg.vercel.app/](https://dalileg.vercel.app/)**
 
 ---
 
