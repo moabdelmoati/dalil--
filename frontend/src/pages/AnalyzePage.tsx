@@ -43,10 +43,22 @@ export function AnalyzePage() {
 
     setProcessing(true);
     setError(null);
+
+    const controller = new AbortController();
+    const abortTimeout = setTimeout(() => {
+      controller.abort();
+    }, 60000);
+
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const response = await fetch(`${API_BASE_URL}/api/analyze`, { method: 'POST', body: formData });
+      const response = await fetch(`${API_BASE_URL}/api/analyze`, {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal,
+      });
+      clearTimeout(abortTimeout);
+
       let data: any = null;
       try {
         data = await response.json();
@@ -60,17 +72,22 @@ export function AnalyzePage() {
         return;
       }
 
-      // Record guest scan and analytics
+      // Record guest scan and analytics (fire-and-forget, do not block UI transition)
       if (isGuest) {
         incrementGuestScans();
       }
-      await logPlatformEvent('scan', user?.id, file.name);
+      logPlatformEvent('scan', user?.id, file.name).catch(() => {});
 
       setAnalysis(data as AnalysisResult, file.name);
       navigate('/contract');
-    } catch (err) {
+    } catch (err: any) {
+      clearTimeout(abortTimeout);
       console.error('Analysis error:', err);
-      setError(t('analyze.error.server'));
+      if (err?.name === 'AbortError') {
+        setError(lang === 'ar' ? 'استغرق التحليل وقتاً أطول من المتوقع. يرجى المحاولة مرة أخرى أو بملف أصغر.' : 'Analysis timed out. Please try again or use a smaller file.');
+      } else {
+        setError(t('analyze.error.server'));
+      }
       setProcessing(false);
     }
   };

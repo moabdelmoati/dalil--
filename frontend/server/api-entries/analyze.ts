@@ -1,4 +1,5 @@
-import multer from 'multer';
+﻿import Busboy from 'busboy';
+import { Readable } from 'stream';
 import path from 'node:path';
 import mammoth from 'mammoth';
 import { detectDocumentType, buildGroundingContext } from '../lib/knowledgeBase';
@@ -15,11 +16,6 @@ export const config = {
 
 const MAX_SIZE = 10 * 1024 * 1024;
 
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: MAX_SIZE },
-});
-
 const EXT_TO_MIME: Record<string, string> = {
   '.pdf': 'application/pdf',
   '.jpg': 'image/jpeg',
@@ -29,18 +25,77 @@ const EXT_TO_MIME: Record<string, string> = {
 
 const ALLOWED_EXTENSIONS = new Set(Object.keys(EXT_TO_MIME).concat(['.docx']));
 
-function runMiddleware(req: any, res: any, fn: any) {
-  return new Promise((resolve, reject) => {
-    fn(req, res, (result: any) => {
-      if (result instanceof Error) {
-        return reject(result);
-      }
-      return resolve(result);
+interface ParsedFile {
+  originalname: string;
+  mimetype: string;
+  buffer: Buffer;
+  size: number;
+}
+
+function parseMultipartRequest(req: any): Promise<{ file: ParsedFile | null; error?: string }> {
+  return new Promise((resolve) => {
+    let busboy: any;
+    try {
+      busboy = Busboy({ headers: req.headers, limits: { fileSize: MAX_SIZE } });
+    } catch (err: any) {
+      return resolve({ file: null, error: err?.message || 'Failed to initialize parser' });
+    }
+
+    let parsedFile: ParsedFile | null = null;
+    let limitExceeded = false;
+
+    // Safety timeout: if upload takes longer than 20 seconds, resolve with error
+    const timer = setTimeout(() => {
+      resolve({ file: null, error: 'TIMEOUT' });
+    }, 20000);
+
+    busboy.on('file', (_fieldname: string, fileStream: any, fileInfo: any) => {
+      const { filename, mimeType } = fileInfo;
+      const chunks: Buffer[] = [];
+
+      fileStream.on('data', (chunk: Buffer) => {
+        chunks.push(chunk);
+      });
+
+      fileStream.on('limit', () => {
+        limitExceeded = true;
+      });
+
+      fileStream.on('end', () => {
+        const buffer = Buffer.concat(chunks);
+        parsedFile = {
+          originalname: filename || 'document',
+          mimetype: mimeType || 'application/octet-stream',
+          buffer,
+          size: buffer.length,
+        };
+      });
     });
+
+    busboy.on('finish', () => {
+      clearTimeout(timer);
+      if (limitExceeded) {
+        return resolve({ file: null, error: 'LIMIT_FILE_SIZE' });
+      }
+      resolve({ file: parsedFile });
+    });
+
+    busboy.on('error', (err: any) => {
+      clearTimeout(timer);
+      resolve({ file: null, error: err?.message || 'Error parsing upload' });
+    });
+
+    // Check if req.body was pre-parsed into a Buffer or string by Vercel serverless runtime
+    if (req.body && (Buffer.isBuffer(req.body) || typeof req.body === 'string')) {
+      const buf = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body);
+      Readable.from(buf).pipe(busboy);
+    } else {
+      req.pipe(busboy);
+    }
   });
 }
 
-function resolveMimeType(file: any): string | null {
+function resolveMimeType(file: ParsedFile): string | null {
   const ext = path.extname(file.originalname).toLowerCase();
   if (ext === '.docx') return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
   return EXT_TO_MIME[ext] ?? null;
@@ -59,7 +114,7 @@ function estimatePageCount(buffer: Buffer, mimeType: string, text?: string): num
   return Math.max(1, Math.round(words / 500));
 }
 
-function isAllowedType(file: any): boolean {
+function isAllowedType(file: ParsedFile): boolean {
   const ext = path.extname(file.originalname).toLowerCase();
   return ALLOWED_EXTENSIONS.has(ext);
 }
@@ -79,19 +134,19 @@ export default async function handler(req: any, res: any) {
     return;
   }
 
-  try {
-    await runMiddleware(req, res, upload.single('file'));
-  } catch (error: any) {
-    if (error && error.code === 'LIMIT_FILE_SIZE') {
-      res.status(400).json({ error: 'حجم الملف أكبر من ١٠ ميجابايت المسموح بها. ارجع ملفاً أصغر.' });
-      return;
-    }
-    res.status(400).json({ error: 'تعذّر استقبال الملف. حاول مرة أخرى.' });
+  const { file, error: parseError } = await parseMultipartRequest(req);
+
+  if (parseError === 'LIMIT_FILE_SIZE') {
+    res.status(400).json({ error: 'حجم الملف أكبر من ١٠ ميجابايت المسموح بها. ارجع ملفاً أصغر.' });
     return;
   }
 
-  const file = req.file;
-  if (!file) {
+  if (parseError === 'TIMEOUT') {
+    res.status(408).json({ error: 'استغرق استقبال الملف وقتاً طويلاً. يرجى المحاولة مرة أخرى بملف أصغر.' });
+    return;
+  }
+
+  if (!file || !file.buffer || file.buffer.length === 0) {
     res.status(400).json({ error: 'لم يتم رفع أي ملف. اختر ملفاً أولاً.' });
     return;
   }
@@ -140,7 +195,8 @@ export default async function handler(req: any, res: any) {
         const documentType = detectDocumentType(`${file.originalname} ${documentTextPreview}`);
         const groundContext = buildGroundingContext(documentType);
 
-        const result = await analyzeDocument({
+        // Run Gemini with a 35-second hard timeout so the request never hangs
+        const geminiPromise = analyzeDocument({
           fileName: file.originalname,
           groundContext,
           pageCount,
@@ -151,13 +207,19 @@ export default async function handler(req: any, res: any) {
               : undefined,
         });
 
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Gemini API request timed out')), 35000)
+        );
+
+        const result: any = await Promise.race([geminiPromise, timeoutPromise]);
         res.status(200).json(result);
         return;
       } catch (geminiError) {
-        console.warn('Gemini analyze failed, using local rule engine:', geminiError);
+        console.warn('Gemini analyze failed or timed out, falling back to local rule engine:', geminiError);
       }
     }
 
+    // Fallback: fast local legal rule engine
     const textToAnalyze = contentText || `مستند: ${file.originalname}`;
     const localResult = analyzeDocumentLocal({
       text: textToAnalyze,
