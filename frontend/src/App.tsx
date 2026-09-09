@@ -178,6 +178,8 @@ function Shell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [profileSettingsOpen, setProfileSettingsOpen] = useState(false);
   const { t, dir, toggleLang, lang } = useLanguage();
   const { user, profile, signOut } = useAuth();
 
@@ -235,8 +237,8 @@ function Shell({ children }: { children: ReactNode }) {
               </button>
 
               {user ? (
-                <div className="flex items-center gap-2">
-                  <Link href="/dashboard" className="flex items-center gap-2 rounded-2xl border border-[#e1d3c2] bg-[#fffdf9] py-1.5 pr-1.5 pl-3 transition hover:border-[#c5aa8c]" data-testid="link-profile">
+                <div className="flex items-center gap-2 relative">
+                  <button onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} className="flex items-center gap-2 rounded-2xl border border-[#e1d3c2] bg-[#fffdf9] py-1.5 pr-1.5 pl-3 transition hover:border-[#c5aa8c]" data-testid="button-profile-dropdown">
                     <div className="grid size-8 place-items-center rounded-full bg-[#e6c58e] text-xs font-bold text-[#3b241a]">
                       {userInitial}
                     </div>
@@ -250,16 +252,41 @@ function Shell({ children }: { children: ReactNode }) {
                         </span>
                       )}
                     </div>
-                  </Link>
-
-                  <button
-                    type="button"
-                    onClick={() => signOut()}
-                    className="rounded-xl p-2.5 text-[#796c63] transition hover:bg-red-50 hover:text-red-700"
-                    title={lang === 'ar' ? 'تسجيل الخروج' : 'Sign out'}
-                  >
-                    <LogOut size={17} />
+                    <ChevronDown size={14} className={`ml-1 text-[#8c694a] transition-transform ${profileDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
+
+                  {profileDropdownOpen && (
+                    <div className="absolute top-[calc(100%+8px)] right-0 md:left-0 md:right-auto mt-2 w-48 rounded-xl bg-[#fffdf9] border border-[#e1d3c2] shadow-xl overflow-hidden z-50">
+                      <div className="p-3 border-b border-[#eee5da] bg-[#fdf7ef]">
+                        <p className="text-sm font-bold text-[#3b241a] truncate">{profile?.full_name || user.email?.split('@')[0]}</p>
+                        <p className="text-xs text-[#796c63] truncate">{user.email}</p>
+                      </div>
+                      <div className="p-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setProfileDropdownOpen(false);
+                            setProfileSettingsOpen(true);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-sm font-semibold text-[#3b241a] hover:bg-[#fdf7ef] rounded-lg transition-colors"
+                        >
+                          <UserRound size={16} />
+                          {lang === 'ar' ? 'الملف الشخصي' : 'Profile'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setProfileDropdownOpen(false);
+                            signOut();
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-lg transition-colors mt-1"
+                        >
+                          <LogOut size={16} />
+                          {lang === 'ar' ? 'تسجيل الخروج' : 'Sign out'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <button
@@ -329,6 +356,42 @@ function Shell({ children }: { children: ReactNode }) {
       </footer>
 
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      {profileSettingsOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-md overflow-hidden rounded-[2rem] bg-[#fffdf9] p-8 shadow-2xl">
+            <button
+              onClick={() => setProfileSettingsOpen(false)}
+              className="absolute left-5 top-5 grid size-9 place-items-center rounded-full bg-[#ede3d5] text-[#6b4632] hover:bg-[#3b241a] hover:text-[#fffdf9]"
+            >
+              <X size={18} />
+            </button>
+            <h2 className="font-display text-2xl font-bold text-[#3b241a] text-center mb-6">
+              {lang === 'ar' ? 'الملف الشخصي' : 'Profile'}
+            </h2>
+            <div className="space-y-4" dir={dir}>
+              <div>
+                <label className="block text-xs font-bold text-[#5e5048] mb-1">{lang === 'ar' ? 'الاسم' : 'Name'}</label>
+                <input type="text" readOnly value={profile?.full_name || ''} className="w-full rounded-xl border border-[#ddcdbb] bg-[#fdf7ef] p-3 text-sm text-[#3b241a] outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#5e5048] mb-1">{lang === 'ar' ? 'البريد الإلكتروني' : 'Email'}</label>
+                <input type="email" readOnly value={user?.email || ''} className="w-full rounded-xl border border-[#ddcdbb] bg-[#fdf7ef] p-3 text-sm text-[#3b241a] outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#5e5048] mb-1">{lang === 'ar' ? 'نوع الحساب' : 'Account Type'}</label>
+                <div className="w-full rounded-xl border border-[#ddcdbb] bg-[#fdf7ef] p-3 text-sm text-[#3b241a] font-bold">
+                  {getRoleBadge() || (lang === 'ar' ? 'مستخدم' : 'User')}
+                </div>
+              </div>
+              <div className="pt-4">
+                <button onClick={() => setProfileSettingsOpen(false)} className="w-full rounded-xl bg-[#3b241a] py-3 text-sm font-bold text-[#fffdf9] hover:bg-[#533426] transition-colors">
+                  {lang === 'ar' ? 'إغلاق' : 'Close'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <nav className="fixed inset-x-4 bottom-4 z-30 grid grid-cols-6 rounded-2xl border border-[#dfd0bd] bg-[#fffdf9]/95 p-1.5 shadow-[0_12px_40px_rgba(59,36,26,.14)] backdrop-blur md:hidden">
         {nav.map((item) => { const Icon = item.icon; const active = location === item.href; return <Link key={item.href} href={item.href} className={`flex flex-col items-center gap-1 rounded-xl py-2 text-[9px] font-bold ${active ? 'bg-[#3b241a] text-[#fffdf9]' : 'text-[#796c63]'}`} data-testid={`link-bottom-${item.href.slice(1)}`}><Icon size={16} />{item.label}</Link>; })}
       </nav>
@@ -442,9 +505,6 @@ function Dashboard() {
           <p className="text-sm font-semibold text-[#a36c42]">{formatToday(lang)}</p>
           <h1 className="mt-2 font-display text-4xl font-bold text-[#3b241a] sm:text-5xl">{t('dash.greeting')}</h1>
           <p className="mt-3 text-[#796c63]">{t('dash.sub')}</p>
-        </div>
-        <div className="hidden items-center gap-3 rounded-2xl border border-[#e1d3c2] bg-[#fffdf9] px-4 py-3 text-sm text-[#796c63] sm:flex">
-          <span className="grid size-8 place-items-center rounded-full bg-[#e6c58e] text-[#3b241a]"><UserRound size={16} /></span> {t('dash.account')}
         </div>
       </div>
       <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
