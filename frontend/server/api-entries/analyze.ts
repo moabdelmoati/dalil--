@@ -10,7 +10,7 @@ export const config = {
   api: {
     bodyParser: false,
   },
-  maxDuration: 60,
+  maxDuration: 300,
 };
 
 const MAX_SIZE = 10 * 1024 * 1024;

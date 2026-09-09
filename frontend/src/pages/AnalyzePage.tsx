@@ -54,6 +54,7 @@ export function AnalyzePage() {
         // response was not JSON
       }
       if (!response.ok) {
+        console.error('API /api/analyze error:', response.status, data);
         setError(data && data.error ? data.error : t('analyze.error.generic'));
         setProcessing(false);
         return;

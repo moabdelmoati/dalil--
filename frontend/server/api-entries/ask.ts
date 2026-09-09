@@ -3,6 +3,10 @@ import { askDocument } from '../lib/gemini';
 import { askDocumentLocal } from '../lib/ruleEngine';
 import { GEMINI_API_KEY } from '../config';
 
+export const config = {
+  maxDuration: 300,
+};
+
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');

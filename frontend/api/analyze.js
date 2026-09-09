@@ -952,7 +952,7 @@ function buildGroundingContext(documentType) {
 
 // server/config.ts
 var GEMINI_API_KEY = process.env.GEMINI_API_KEY || "YOUR_GEMINI_API_KEY_HERE";
-var GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+var GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
 
 // server/lib/prompts.ts
 var SYSTEM_VOICE_RULES = [
@@ -1111,7 +1111,7 @@ function sanitizeAnalysisResult(raw) {
 var ai = null;
 var GoogleGenAIClass = null;
 function model() {
-  return GEMINI_MODEL || "gemini-2.5-flash";
+  return GEMINI_MODEL || "gemini-3.6-flash";
 }
 async function getClient() {
   if (!ai) {
@@ -1329,7 +1329,7 @@ var config = {
   api: {
     bodyParser: false
   },
-  maxDuration: 60
+  maxDuration: 300
 };
 var MAX_SIZE = 10 * 1024 * 1024;
 var upload = multer({

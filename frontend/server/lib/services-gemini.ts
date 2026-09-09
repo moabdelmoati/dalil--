@@ -25,7 +25,7 @@ export async function askServicesChat(input: ServicesAskInput): Promise<string> 
   // Add the current message
   let promptText = input.message;
   if (input.serviceId) {
-    promptText = \`[الخدمة المستفسر عنها: \${input.serviceId}]\nسؤال المستخدم: \${input.message}\`;
+    promptText = `[الخدمة المستفسر عنها: ${input.serviceId}]\nسؤال المستخدم: ${input.message}`;
   }
 
   contents.push({

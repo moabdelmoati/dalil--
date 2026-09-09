@@ -34,7 +34,7 @@ export async function askServicesChat(input: ServicesAskInput): Promise<string> 
   });
 
   const response = await ai.models.generateContent({
-    model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+    model: process.env.GEMINI_MODEL || 'gemini-3.6-flash',
     contents,
     config: {
       systemInstruction: SERVICES_SYSTEM_INSTRUCTION,

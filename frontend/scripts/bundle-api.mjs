@@ -6,6 +6,7 @@ esbuild.buildSync({
     analyze: 'server/api-entries/analyze.ts',
     health: 'server/api-entries/health.ts',
     index: 'server/api-entries/index.ts',
+    'services-chat': 'server/api-entries/services-chat.ts',
   },
   outdir: 'api',
   bundle: true,
