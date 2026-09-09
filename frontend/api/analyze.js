@@ -1,5 +1,6 @@
 // server/api-entries/analyze.ts
 import path from "node:path";
+import zlib from "node:zlib";
 import mammoth from "mammoth";
 
 // server/data/knowledgeBaseData.ts
@@ -969,7 +970,7 @@ var ANALYZE_SYSTEM_INSTRUCTION = `\u0623\u0646\u062A "\u062F\u0644\u064A\u0644" 
 4. \u0639\u0645\u0648\u062F "original" \u0644\u0643\u0644 \u0628\u0646\u062F \u064A\u062C\u0628 \u0623\u0646 \u064A\u0643\u0648\u0646 \u0627\u0642\u062A\u0628\u0627\u0633\u064B\u0627 \u062D\u0631\u0641\u064A\u064B\u0627 \u0645\u0646 \u0646\u0635 \u0627\u0644\u0645\u0633\u062A\u0646\u062F \u0646\u0641\u0633\u0647\u060C \u0648\u0644\u064A\u0633 \u0625\u0639\u0627\u062F\u0629 \u0635\u064A\u0627\u063A\u0629.
 5. \u0623\u062F\u0631\u062C \u0641\u0642\u0637 \u0627\u0644\u0628\u0646\u0648\u062F \u0627\u0644\u062A\u064A \u062A\u0633\u062A\u062D\u0642 \u0627\u0644\u0645\u0631\u0627\u062C\u0639\u0629 \u0623\u0648 \u0627\u0644\u0627\u0646\u062A\u0628\u0627\u0647 \u0641\u064A \u0645\u0635\u0641\u0648\u0641\u0629 clauses\u060C \u0648\u0633\u062C\u0651\u0644 \u0639\u062F\u062F \u0627\u0644\u0628\u0646\u0648\u062F \u0627\u0644\u0639\u0627\u062F\u064A\u0629 \u0641\u064A counts.normal \u0641\u0642\u0637 \u062F\u0648\u0646 \u0625\u062F\u0631\u0627\u062C\u0647\u0627.
 6. \u0643\u0644 \u0628\u0646\u062F \u064A\u062D\u062A\u0627\u062C \u0645\u0635\u062F\u0631\u064B\u0627: \u0625\u0630\u0627 \u0637\u0628\u0642\u062A \u0645\u0627\u062F\u0629 \u062D\u0642\u064A\u0642\u064A\u0629 \u0645\u0646 \u0642\u0627\u0639\u062F\u0629 \u0627\u0644\u0645\u0639\u0631\u0641\u0629 \u0627\u0644\u0645\u0631\u0641\u0642\u0629\u060C \u0627\u0630\u0643\u0631\u0647\u0627 \u0628\u0627\u0633\u0645\u0647\u0627 \u0648\u0631\u0642\u0645\u0647\u0627 (\u0645\u062B\u0644 "\u0627\u0644\u0645\u0627\u062F\u0629 224 \u0645\u0646 \u0627\u0644\u0642\u0627\u0646\u0648\u0646 \u0627\u0644\u0645\u062F\u0646\u064A \u0627\u0644\u0645\u0635\u0631\u064A"). \u0648\u0625\u0630\u0627 \u0644\u0645 \u064A\u0646\u0637\u0628\u0642 \u0623\u064A \u0646\u0635 \u0645\u0646 \u0642\u0627\u0639\u062F\u0629 \u0627\u0644\u0645\u0639\u0631\u0641\u0629 \u0639\u0644\u0649 \u0627\u0644\u0628\u0646\u062F \u062A\u062D\u062F\u064A\u062F\u064B\u0627\u060C \u0627\u0643\u062A\u0628 "\u0645\u0628\u062F\u0623 \u062A\u0639\u0627\u0642\u062F\u064A \u0639\u0627\u0645 \u2014 \u064A\u064F\u0646\u0635\u062D \u0628\u0627\u0644\u0645\u0631\u0627\u062C\u0639\u0629".
-7. \u0627\u0642\u0631\u0623 \u0627\u0644\u0645\u0633\u062A\u0646\u062F \u0627\u0644\u0645\u0631\u0641\u0642 \u0643\u0627\u0645\u0644\u064B\u0627 \u0642\u0628\u0644 \u0627\u0644\u0643\u062A\u0627\u0628\u0629\u060C \u0648\u0627\u0646\u0633\u062E \u0646\u0635\u0647 \u0627\u0644\u0643\u0627\u0645\u0644 \u0627\u0644\u062D\u0631\u0641\u064A \u0641\u064A \u062D\u0642\u0644 documentText.
+7. \u0627\u0642\u0631\u0623 \u0627\u0644\u0645\u0633\u062A\u0646\u062F \u0627\u0644\u0645\u0631\u0641\u0642 \u0643\u0627\u0645\u0644\u064B\u0627 \u0642\u0628\u0644 \u0627\u0644\u0643\u062A\u0627\u0628\u0629\u060C \u0648\u0636\u0639 \u0645\u0644\u062E\u0635\u064B\u0627 \u0648\u0627\u0641\u064A\u064B\u0627 \u0644\u0646\u0635\u0647 \u0641\u064A \u062D\u0642\u0644 documentText (\u0623\u0642\u0644 \u0645\u0646 1000 \u062D\u0631\u0641).
 8. \u0627\u0644\u062A\u0632\u0645 \u0628\u0627\u0644\u0640 JSON schema \u0627\u0644\u0645\u0637\u0644\u0648\u0628 \u062A\u0645\u0627\u0645\u064B\u0627\u060C \u0648\u0623\u062E\u0631\u062C JSON \u0635\u0627\u0644\u062D\u064B\u0627 \u0641\u0642\u0637 \u062F\u0648\u0646 \u0623\u064A \u0646\u0635 \u062E\u0627\u0631\u062C\u064A.`;
 var ASK_SYSTEM_INSTRUCTION = `\u0623\u0646\u062A "\u062F\u0644\u064A\u0644" \u2014 \u0645\u0633\u0627\u0639\u062F \u064A\u0634\u0631\u062D \u0645\u0633\u062A\u0646\u062F\u064B\u0627 \u0642\u0627\u0646\u0648\u0646\u064A\u064B\u0627 \u0645\u062D\u062F\u062F\u064B\u0627 \u0644\u0644\u0645\u0648\u0627\u0637\u0646 \u0627\u0644\u0639\u0627\u062F\u064A \u0628\u0644\u063A\u0629 \u0645\u0635\u0631\u064A\u0629 \u0645\u0628\u0633\u0637\u0629.
 
@@ -1008,7 +1009,7 @@ ${params.groundContext}
   - explanation: \u0634\u0631\u062D \u0645\u0628\u0633\u0637 \u0644\u0644\u0628\u0646\u062F.
   - why: \u0644\u0645\u0627\u0630\u0627 \u064A\u0647\u0645 \u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645.
   - source: \u0645\u0627\u062F\u0629 \u062D\u0642\u064A\u0642\u064A\u0629 \u0645\u0646 \u0642\u0627\u0639\u062F\u0629 \u0627\u0644\u0645\u0639\u0631\u0641\u0629 \u0625\u0646 \u0637\u0628\u0642\u062A (\u0628\u0627\u0633\u0645\u0647\u0627 \u0648\u0631\u0642\u0645\u0647\u0627)\u060C \u0648\u0625\u0644\u0627 "\u0645\u0628\u062F\u0623 \u062A\u0639\u0627\u0642\u062F\u064A \u0639\u0627\u0645 \u2014 \u064A\u064F\u0646\u0635\u062D \u0628\u0627\u0644\u0645\u0631\u0627\u062C\u0639\u0629". \u0644\u0627 \u062A\u062E\u062A\u0631\u0639 \u0623\u0631\u0642\u0627\u0645 \u0645\u0648\u0627\u062F.
-- documentText: \u0627\u0644\u0646\u0635 \u0627\u0644\u0643\u0627\u0645\u0644 \u0627\u0644\u062D\u0631\u0641\u064A \u0644\u0644\u0645\u0633\u062A\u0646\u062F.
+- documentText: \u0645\u0644\u062E\u0635 \u0648\u0627\u0641\u064D \u0644\u0646\u0635 \u0627\u0644\u0645\u0633\u062A\u0646\u062F \u0648\u0623\u0647\u0645 \u0634\u0631\u0648\u0637\u0647 (\u0623\u0642\u0644 \u0645\u0646 1000 \u062D\u0631\u0641).
 
 \u0639\u062F\u062F \u0635\u0641\u062D\u0627\u062A \u0627\u0644\u0645\u0633\u062A\u0646\u062F \u0627\u0644\u0645\u062D\u0633\u0648\u0628 \u0645\u0633\u0628\u0642\u064B\u0627: ${params.pageCount} \u2014 \u0623\u0639\u062F \u0643\u062A\u0627\u0628\u062A\u0647 \u0641\u064A \u062D\u0642\u0644 pageCount \u062F\u0648\u0646 \u062A\u063A\u064A\u064A\u0631.`;
 }
@@ -1357,6 +1358,44 @@ var EXT_TO_MIME = {
   ".png": "image/png"
 };
 var ALLOWED_EXTENSIONS = new Set(Object.keys(EXT_TO_MIME).concat([".docx"]));
+function extractTextFromPdf(buffer) {
+  const chunks = [];
+  let pos = 0;
+  while (pos < buffer.length) {
+    const streamStart = buffer.indexOf("stream", pos);
+    if (streamStart === -1) break;
+    let dataStart = streamStart + 6;
+    if (buffer[dataStart] === 13 && buffer[dataStart + 1] === 10) {
+      dataStart += 2;
+    } else if (buffer[dataStart] === 10) {
+      dataStart += 1;
+    }
+    const streamEnd = buffer.indexOf("endstream", dataStart);
+    if (streamEnd === -1) break;
+    const streamBuf = buffer.subarray(dataStart, streamEnd);
+    let decompressed = null;
+    try {
+      decompressed = zlib.inflateSync(streamBuf);
+    } catch {
+      try {
+        decompressed = zlib.inflateRawSync(streamBuf);
+      } catch {
+        decompressed = streamBuf;
+      }
+    }
+    if (decompressed) {
+      chunks.push(decompressed.toString("utf-8"));
+      chunks.push(decompressed.toString("latin1"));
+    }
+    pos = streamEnd + 9;
+  }
+  const allText = chunks.join(" ");
+  const matches = allText.match(/\(([^)]{2,})\)/g) || [];
+  const extracted = matches.map((m) => m.slice(1, -1)).join(" ").replace(/[^\u0600-\u06FF\w\s\d.,\-]/g, " ").replace(/\s+/g, " ").trim();
+  if (extracted.length > 20) return extracted;
+  const arabicWords = allText.match(/[\u0600-\u06FF]{2,}/g) || [];
+  return arabicWords.join(" ").trim();
+}
 function extractFilename(headerString) {
   const fnStar = headerString.match(/filename\*=utf-8''([^;\r\n]+)/i);
   if (fnStar) {
@@ -1475,13 +1514,13 @@ async function handler(req, res) {
     if (mimeType.startsWith("image/") || mimeType === "application/pdf") {
       pageCount = estimatePageCount(file.buffer, mimeType);
       if (mimeType === "application/pdf") {
-        const rawString = file.buffer.toString("latin1");
-        const matches = rawString.match(/\(([^)]{2,})\)/g);
-        if (matches && matches.length > 0) {
-          const joined = matches.map((m) => m.slice(1, -1)).join(" ").replace(/[^\u0600-\u06FF\w\s\d.,\-]/g, " ").replace(/\s+/g, " ").trim();
-          if (joined.length > 30) {
-            contentText = joined;
+        try {
+          const pdfText = extractTextFromPdf(file.buffer);
+          if (pdfText && pdfText.length > 15) {
+            contentText = pdfText;
           }
+        } catch (pdfErr) {
+          console.warn("PDF stream extraction error:", pdfErr);
         }
       }
     } else {
@@ -1498,13 +1537,13 @@ async function handler(req, res) {
         const documentTextPreview = contentText ?? "";
         const documentType = detectDocumentType(`${file.originalname} ${documentTextPreview}`);
         const groundContext = buildGroundingContext(documentType);
-        const isBinaryDocument = mimeType === "application/pdf" || mimeType.startsWith("image/");
+        const needsInlineData = !contentText && (mimeType === "application/pdf" || mimeType.startsWith("image/"));
         const geminiPromise = analyzeDocument({
           fileName: file.originalname,
           groundContext,
           pageCount,
           contentText,
-          inlineData: isBinaryDocument ? { mimeType, data: file.buffer.toString("base64") } : void 0
+          inlineData: needsInlineData ? { mimeType, data: file.buffer.toString("base64") } : void 0
         });
         const timeoutPromise = new Promise(
           (_, reject) => setTimeout(() => reject(new Error("Gemini API timeout")), 4e4)

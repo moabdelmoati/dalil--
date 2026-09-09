@@ -1,4 +1,5 @@
 import path from 'node:path';
+import zlib from 'node:zlib';
 import mammoth from 'mammoth';
 import { detectDocumentType, buildGroundingContext } from '../lib/knowledgeBase';
 import { analyzeDocument } from '../lib/gemini';
@@ -28,6 +29,60 @@ interface ParsedFile {
   mimetype: string;
   buffer: Buffer;
   size: number;
+}
+
+function extractTextFromPdf(buffer: Buffer): string {
+  const chunks: string[] = [];
+  let pos = 0;
+
+  while (pos < buffer.length) {
+    const streamStart = buffer.indexOf('stream', pos);
+    if (streamStart === -1) break;
+
+    let dataStart = streamStart + 6;
+    if (buffer[dataStart] === 0x0d && buffer[dataStart + 1] === 0x0a) {
+      dataStart += 2;
+    } else if (buffer[dataStart] === 0x0a) {
+      dataStart += 1;
+    }
+
+    const streamEnd = buffer.indexOf('endstream', dataStart);
+    if (streamEnd === -1) break;
+
+    const streamBuf = buffer.subarray(dataStart, streamEnd);
+    let decompressed: Buffer | null = null;
+
+    try {
+      decompressed = zlib.inflateSync(streamBuf);
+    } catch {
+      try {
+        decompressed = zlib.inflateRawSync(streamBuf);
+      } catch {
+        decompressed = streamBuf;
+      }
+    }
+
+    if (decompressed) {
+      chunks.push(decompressed.toString('utf-8'));
+      chunks.push(decompressed.toString('latin1'));
+    }
+
+    pos = streamEnd + 9;
+  }
+
+  const allText = chunks.join(' ');
+  const matches = allText.match(/\(([^)]{2,})\)/g) || [];
+  const extracted = matches
+    .map((m) => m.slice(1, -1))
+    .join(' ')
+    .replace(/[^\u0600-\u06FF\w\s\d.,\-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (extracted.length > 20) return extracted;
+
+  const arabicWords = allText.match(/[\u0600-\u06FF]{2,}/g) || [];
+  return arabicWords.join(' ').trim();
 }
 
 function extractFilename(headerString: string): string {
@@ -171,13 +226,13 @@ export default async function handler(req: any, res: any) {
     if (mimeType.startsWith('image/') || mimeType === 'application/pdf') {
       pageCount = estimatePageCount(file.buffer, mimeType);
       if (mimeType === 'application/pdf') {
-        const rawString = file.buffer.toString('latin1');
-        const matches = rawString.match(/\(([^)]{2,})\)/g);
-        if (matches && matches.length > 0) {
-          const joined = matches.map(m => m.slice(1, -1)).join(' ').replace(/[^\u0600-\u06FF\w\s\d.,\-]/g, ' ').replace(/\s+/g, ' ').trim();
-          if (joined.length > 30) {
-            contentText = joined;
+        try {
+          const pdfText = extractTextFromPdf(file.buffer);
+          if (pdfText && pdfText.length > 15) {
+            contentText = pdfText;
           }
+        } catch (pdfErr) {
+          console.warn('PDF stream extraction error:', pdfErr);
         }
       }
     } else {
@@ -196,14 +251,14 @@ export default async function handler(req: any, res: any) {
         const documentType = detectDocumentType(`${file.originalname} ${documentTextPreview}`);
         const groundContext = buildGroundingContext(documentType);
 
-        // Always pass PDF/image bytes as inlineData so Gemini reads full layout and text directly
-        const isBinaryDocument = mimeType === 'application/pdf' || mimeType.startsWith('image/');
+        // Only pass binary inlineData when plain text was not extractable (e.g. scanned images)
+        const needsInlineData = !contentText && (mimeType === 'application/pdf' || mimeType.startsWith('image/'));
         const geminiPromise = analyzeDocument({
           fileName: file.originalname,
           groundContext,
           pageCount,
           contentText,
-          inlineData: isBinaryDocument
+          inlineData: needsInlineData
             ? { mimeType, data: file.buffer.toString('base64') }
             : undefined,
         });
