@@ -23,6 +23,7 @@ import { PricingPage } from '@/pages/PricingPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { ConsultationsPage } from '@/pages/ConsultationsPage';
 import { AdminDashboardPage } from '@/pages/AdminDashboardPage';
+import { PresentationPage } from '@/pages/PresentationPage';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { AuthModal } from '@/components/AuthModal';
 import { RoleSelectionModal } from '@/components/RoleSelectionModal';
@@ -347,6 +348,10 @@ function Shell({ children }: { children: ReactNode }) {
             <Link href="/analyze" className="hover:text-[#3b241a]">{t('nav.analyze')}</Link>
             <Link href="/consultations" className="hover:text-[#3b241a]">{lang === 'ar' ? 'حجز استشارة' : 'Consultations'}</Link>
             <Link href="/pricing" className="hover:text-[#3b241a]">{t('nav.pricing')}</Link>
+            <Link href="/presentation" className="inline-flex items-center gap-1 text-[#3b241a] font-bold bg-[#e6c58e] px-3 py-1 rounded-lg shadow-sm hover:brightness-105">
+              <Sparkles size={13} />
+              <span>{lang === 'ar' ? 'العرض التقديمي (Pitch Deck)' : 'Pitch Deck'}</span>
+            </Link>
             <Link href="/admin" className="inline-flex items-center gap-1 text-[#a36c42] hover:text-[#3b241a] bg-[#ede3d5] px-2.5 py-1 rounded-lg">
               <Sparkles size={13} />
               <span>{lang === 'ar' ? 'لوحة الإحصائيات (Admin)' : 'Admin Metrics'}</span>
@@ -633,22 +638,28 @@ function Router() {
   const [location] = useLocation();
   return (
     <ErrorBoundary resetKey={location}>
-      <Shell>
-        <Switch>
-          <Route path="/" component={Home} />
-          <Route path="/dashboard" component={Dashboard} />
-          <Route path="/services" component={Services} />
-          <Route path="/services/:id" component={ServiceDetail} />
-          <Route path="/analyze" component={AnalyzePage} />
-          <Route path="/contract" component={ContractPage} />
-          <Route path="/ask" component={AskPage} />
-          <Route path="/pricing" component={PricingPage} />
-          <Route path="/login" component={LoginPage} />
-          <Route path="/consultations" component={ConsultationsPage} />
-          <Route path="/admin" component={AdminDashboardPage} />
-          <Route component={NotFound} />
-        </Switch>
-      </Shell>
+      <Switch>
+        <Route path="/presentation" component={PresentationPage} />
+        <Route path="/pitch" component={PresentationPage} />
+        <Route>
+          <Shell>
+            <Switch>
+              <Route path="/" component={Home} />
+              <Route path="/dashboard" component={Dashboard} />
+              <Route path="/services" component={Services} />
+              <Route path="/services/:id" component={ServiceDetail} />
+              <Route path="/analyze" component={AnalyzePage} />
+              <Route path="/contract" component={ContractPage} />
+              <Route path="/ask" component={AskPage} />
+              <Route path="/pricing" component={PricingPage} />
+              <Route path="/login" component={LoginPage} />
+              <Route path="/consultations" component={ConsultationsPage} />
+              <Route path="/admin" component={AdminDashboardPage} />
+              <Route component={NotFound} />
+            </Switch>
+          </Shell>
+        </Route>
+      </Switch>
       <RoleSelectionModal />
     </ErrorBoundary>
   );
