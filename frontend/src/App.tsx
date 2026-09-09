@@ -492,6 +492,14 @@ function Home() {
 
 function Dashboard() {
   const { t, lang } = useLanguage();
+  const [recentDocs] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem('dalil_recent_scans');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const actions: { title: string; body: string; href: string; icon: LucideIcon; tone: string }[] = [
     { title: t('dash.action1.title'), body: t('dash.action1.body'), href: '/analyze', icon: FileCheck2, tone: 'bg-[#3b241a] text-[#fffdf9]' },
     { title: t('dash.action2.title'), body: t('dash.action2.body'), href: '/services', icon: Landmark, tone: 'bg-[#e6c58e] text-[#3b241a]' },
@@ -550,21 +558,36 @@ function Dashboard() {
             <Button href="/analyze" variant="ghost" testId="button-dashboard-upload">{t('dash.upload')} <ArrowLeft size={15} /></Button>
           </div>
           <div className="space-y-3">
-            {[
-              { name: t('dash.doc1.name'), meta: t('dash.doc1.meta'), status: t('dash.doc1.status'), tone: 'text-[#9b5f3a] bg-[#f5e4d8]' },
-              { name: t('dash.doc2.name'), meta: t('dash.doc2.meta'), status: t('dash.doc2.status'), tone: 'text-[#447052] bg-[#dce9db]' },
-              { name: t('dash.doc3.name'), meta: t('dash.doc3.meta'), status: t('dash.doc3.status'), tone: 'text-[#447052] bg-[#dce9db]' },
-            ].map((doc, index) => (
-              <Link href={index === 0 ? '/contract' : '/ask'} key={doc.name} className="flex items-center gap-4 rounded-2xl border border-[#e1d3c2] bg-[#fffdf9] p-4 transition hover:border-[#c5aa8c] hover:shadow-sm" data-testid={`row-document-${index}`}>
-                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#ede3d5] text-[#6b4632]"><FileText size={20} /></span>
-                <span className="min-w-0 flex-1">
-                  <strong className="block truncate text-sm text-[#3b241a]">{doc.name}</strong>
-                  <small className="mt-1 block text-xs text-[#95877d]">{doc.meta}</small>
+            {recentDocs && recentDocs.length > 0 ? (
+              recentDocs.map((doc: any, index: number) => (
+                <Link href="/contract" key={doc.name || index} className="flex items-center gap-4 rounded-2xl border border-[#e1d3c2] bg-[#fffdf9] p-4 transition hover:border-[#c5aa8c] hover:shadow-sm" data-testid={`row-document-${index}`}>
+                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#ede3d5] text-[#6b4632]"><FileText size={20} /></span>
+                  <span className="min-w-0 flex-1">
+                    <strong className="block truncate text-sm text-[#3b241a]">{doc.name}</strong>
+                    <small className="mt-1 block text-xs text-[#95877d]">{doc.meta}</small>
+                  </span>
+                  <span className={`hidden rounded-full px-3 py-1.5 text-[11px] font-bold sm:block ${doc.tone || 'text-[#9b5f3a] bg-[#f5e4d8]'}`}>{doc.status}</span>
+                  <ChevronLeft size={17} className="text-[#a7907d]" />
+                </Link>
+              ))
+            ) : (
+              <div className="rounded-2xl border-2 border-dashed border-[#e1d3c2] bg-[#fffdf9]/70 p-8 text-center" data-testid="empty-documents-state">
+                <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-[#ede3d5] text-[#6b4632]">
+                  <FolderOpen size={22} />
                 </span>
-                <span className={`hidden rounded-full px-3 py-1.5 text-[11px] font-bold sm:block ${doc.tone}`}>{doc.status}</span>
-                <ChevronLeft size={17} className="text-[#a7907d]" />
-              </Link>
-            ))}
+                <h3 className="mt-3 text-sm font-bold text-[#3b241a]">
+                  {lang === 'ar' ? 'لا توجد مستندات بعد' : 'No documents yet'}
+                </h3>
+                <p className="mt-1 text-xs text-[#796c63]">
+                  {lang === 'ar' ? 'ابدأ بفحص أول عقد أو مستند لاستخراج البنود والتحذيرات فوراً.' : 'Upload your first document to extract clauses and warnings.'}
+                </p>
+                <div className="mt-4">
+                  <Button href="/analyze" variant="secondary" className="text-xs" testId="button-empty-upload">
+                    {lang === 'ar' ? 'فحص مستند جديد' : 'Analyze new document'}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </section>
         <aside className="rounded-2xl border border-[#ddc8aa] bg-[#f1e1c8] p-6">

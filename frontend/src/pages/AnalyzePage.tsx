@@ -78,6 +78,27 @@ export function AnalyzePage() {
       }
       logPlatformEvent('scan', user?.id, file.name).catch(() => {});
 
+      try {
+        const prev = JSON.parse(localStorage.getItem('dalil_recent_scans') || '[]');
+        const fileExt = file.name.split('.').pop()?.toUpperCase() || 'PDF';
+        const reviewCount = data?.counts?.review || data?.clauses?.length || 0;
+        const criticalCount = data?.counts?.critical || 0;
+        const newDoc = {
+          name: file.name,
+          meta: `${fileExt} · ${new Date().toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'short' })}`,
+          status: reviewCount > 0 
+            ? (lang === 'ar' ? `${reviewCount} نقاط تستحق الانتباه` : `${reviewCount} points to note`)
+            : (lang === 'ar' ? 'تمت المراجعة' : 'Reviewed'),
+          tone: criticalCount > 0 
+            ? 'text-[#a13b28] bg-[#f7deda]' 
+            : (reviewCount > 0 ? 'text-[#9b5f3a] bg-[#f5e4d8]' : 'text-[#447052] bg-[#dce9db]'),
+        };
+        const updated = [newDoc, ...prev.filter((d: any) => d.name !== file.name)].slice(0, 5);
+        localStorage.setItem('dalil_recent_scans', JSON.stringify(updated));
+      } catch (storageErr) {
+        console.warn('Failed to cache scan to localStorage:', storageErr);
+      }
+
       setAnalysis(data as AnalysisResult, file.name);
       navigate('/contract');
     } catch (err: any) {
