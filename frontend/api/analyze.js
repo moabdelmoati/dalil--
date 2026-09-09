@@ -1,7 +1,6 @@
 // server/api-entries/analyze.ts
 import path from "node:path";
 import mammoth from "mammoth";
-import pdfParse from "pdf-parse";
 
 // server/data/knowledgeBaseData.ts
 var kbData = {
@@ -1145,16 +1144,34 @@ async function analyzeDocument(input) {
     parts.push({ inlineData: input.inlineData });
   }
   const contents = [{ role: "user", parts }];
-  const response = await client.models.generateContent({
-    model: model(),
-    contents,
-    config: {
-      systemInstruction: ANALYZE_SYSTEM_INSTRUCTION,
-      responseMimeType: "application/json",
-      responseSchema: ANALYZE_RESPONSE_SCHEMA,
-      maxOutputTokens: 65536
+  let response = null;
+  let lastError = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      response = await client.models.generateContent({
+        model: model(),
+        contents,
+        config: {
+          systemInstruction: ANALYZE_SYSTEM_INSTRUCTION,
+          responseMimeType: "application/json",
+          responseSchema: ANALYZE_RESPONSE_SCHEMA,
+          maxOutputTokens: 65536
+        }
+      });
+      if (response && response.text) break;
+    } catch (err) {
+      lastError = err;
+      if ((err?.status === 503 || err?.status === 429) && attempt < 3) {
+        console.warn(`Gemini 503/429 on attempt ${attempt}. Retrying in 1.5s...`);
+        await new Promise((r) => setTimeout(r, 1500));
+        continue;
+      }
+      throw err;
     }
-  });
+  }
+  if (!response && lastError) {
+    throw lastError;
+  }
   const text = response.text;
   if (!text) {
     throw new Error("Gemini returned an empty response for document analysis.");
@@ -1458,20 +1475,12 @@ async function handler(req, res) {
     if (mimeType.startsWith("image/") || mimeType === "application/pdf") {
       pageCount = estimatePageCount(file.buffer, mimeType);
       if (mimeType === "application/pdf") {
-        try {
-          const parsedPdf = await pdfParse(file.buffer);
-          if (parsedPdf && parsedPdf.text && parsedPdf.text.trim().length > 10) {
-            contentText = parsedPdf.text.trim();
-          }
-          if (parsedPdf && parsedPdf.numpages) {
-            pageCount = parsedPdf.numpages;
-          }
-        } catch (pdfErr) {
-          console.warn("pdf-parse failed, attempting fallback raw extract:", pdfErr);
-          const rawString = file.buffer.toString("utf-8");
-          const cleanText = rawString.replace(/[^\u0621-\u064A\s\d\.,]/g, " ").replace(/\s+/g, " ").trim();
-          if (cleanText.length > 50) {
-            contentText = cleanText;
+        const rawString = file.buffer.toString("latin1");
+        const matches = rawString.match(/\(([^)]{2,})\)/g);
+        if (matches && matches.length > 0) {
+          const joined = matches.map((m) => m.slice(1, -1)).join(" ").replace(/[^\u0600-\u06FF\w\s\d.,\-]/g, " ").replace(/\s+/g, " ").trim();
+          if (joined.length > 30) {
+            contentText = joined;
           }
         }
       }
@@ -1489,15 +1498,16 @@ async function handler(req, res) {
         const documentTextPreview = contentText ?? "";
         const documentType = detectDocumentType(`${file.originalname} ${documentTextPreview}`);
         const groundContext = buildGroundingContext(documentType);
+        const isBinaryDocument = mimeType === "application/pdf" || mimeType.startsWith("image/");
         const geminiPromise = analyzeDocument({
           fileName: file.originalname,
           groundContext,
           pageCount,
           contentText,
-          inlineData: contentText === void 0 ? { mimeType, data: file.buffer.toString("base64") } : void 0
+          inlineData: isBinaryDocument ? { mimeType, data: file.buffer.toString("base64") } : void 0
         });
         const timeoutPromise = new Promise(
-          (_, reject) => setTimeout(() => reject(new Error("Gemini API timeout")), 3e4)
+          (_, reject) => setTimeout(() => reject(new Error("Gemini API timeout")), 4e4)
         );
         const result = await Promise.race([geminiPromise, timeoutPromise]);
         res.status(200).json(result);

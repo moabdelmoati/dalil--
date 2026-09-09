@@ -74,16 +74,36 @@ export async function analyzeDocument(input: AnalyzeInput): Promise<AnalysisResu
 
   const contents: any[] = [{ role: 'user', parts }];
 
-  const response = await client.models.generateContent({
-    model: model(),
-    contents,
-    config: {
-      systemInstruction: ANALYZE_SYSTEM_INSTRUCTION,
-      responseMimeType: 'application/json',
-      responseSchema: ANALYZE_RESPONSE_SCHEMA,
-      maxOutputTokens: 65536,
-    },
-  });
+  let response: any = null;
+  let lastError: any = null;
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      response = await client.models.generateContent({
+        model: model(),
+        contents,
+        config: {
+          systemInstruction: ANALYZE_SYSTEM_INSTRUCTION,
+          responseMimeType: 'application/json',
+          responseSchema: ANALYZE_RESPONSE_SCHEMA,
+          maxOutputTokens: 65536,
+        },
+      });
+      if (response && response.text) break;
+    } catch (err: any) {
+      lastError = err;
+      if ((err?.status === 503 || err?.status === 429) && attempt < 3) {
+        console.warn(`Gemini 503/429 on attempt ${attempt}. Retrying in 1.5s...`);
+        await new Promise((r) => setTimeout(r, 1500));
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  if (!response && lastError) {
+    throw lastError;
+  }
 
   const text = response.text;
   if (!text) {

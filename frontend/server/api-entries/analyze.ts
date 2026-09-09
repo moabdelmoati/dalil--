@@ -1,6 +1,5 @@
 import path from 'node:path';
 import mammoth from 'mammoth';
-import pdfParse from 'pdf-parse';
 import { detectDocumentType, buildGroundingContext } from '../lib/knowledgeBase';
 import { analyzeDocument } from '../lib/gemini';
 import { analyzeDocumentLocal } from '../lib/ruleEngine';
@@ -172,20 +171,12 @@ export default async function handler(req: any, res: any) {
     if (mimeType.startsWith('image/') || mimeType === 'application/pdf') {
       pageCount = estimatePageCount(file.buffer, mimeType);
       if (mimeType === 'application/pdf') {
-        try {
-          const parsedPdf = await pdfParse(file.buffer);
-          if (parsedPdf && parsedPdf.text && parsedPdf.text.trim().length > 10) {
-            contentText = parsedPdf.text.trim();
-          }
-          if (parsedPdf && parsedPdf.numpages) {
-            pageCount = parsedPdf.numpages;
-          }
-        } catch (pdfErr) {
-          console.warn('pdf-parse failed, attempting fallback raw extract:', pdfErr);
-          const rawString = file.buffer.toString('utf-8');
-          const cleanText = rawString.replace(/[^\u0621-\u064A\s\d\.,]/g, ' ').replace(/\s+/g, ' ').trim();
-          if (cleanText.length > 50) {
-            contentText = cleanText;
+        const rawString = file.buffer.toString('latin1');
+        const matches = rawString.match(/\(([^)]{2,})\)/g);
+        if (matches && matches.length > 0) {
+          const joined = matches.map(m => m.slice(1, -1)).join(' ').replace(/[^\u0600-\u06FF\w\s\d.,\-]/g, ' ').replace(/\s+/g, ' ').trim();
+          if (joined.length > 30) {
+            contentText = joined;
           }
         }
       }
@@ -205,20 +196,20 @@ export default async function handler(req: any, res: any) {
         const documentType = detectDocumentType(`${file.originalname} ${documentTextPreview}`);
         const groundContext = buildGroundingContext(documentType);
 
-        // Run Gemini with a 30-second hard timeout
+        // Always pass PDF/image bytes as inlineData so Gemini reads full layout and text directly
+        const isBinaryDocument = mimeType === 'application/pdf' || mimeType.startsWith('image/');
         const geminiPromise = analyzeDocument({
           fileName: file.originalname,
           groundContext,
           pageCount,
           contentText,
-          inlineData:
-            contentText === undefined
-              ? { mimeType, data: file.buffer.toString('base64') }
-              : undefined,
+          inlineData: isBinaryDocument
+            ? { mimeType, data: file.buffer.toString('base64') }
+            : undefined,
         });
 
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Gemini API timeout')), 30000)
+          setTimeout(() => reject(new Error('Gemini API timeout')), 40000)
         );
 
         const result: any = await Promise.race([geminiPromise, timeoutPromise]);
