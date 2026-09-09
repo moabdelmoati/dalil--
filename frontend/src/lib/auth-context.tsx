@@ -73,12 +73,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Fetch or create profile in Firestore / LocalStorage
   const fetchProfile = async (uid: string, userEmail?: string | null, userMetadata?: any) => {
+    const savedRole = (localStorage.getItem(`dalil_user_role_${uid}`) as UserRole) || null;
+
     try {
       const docRef = doc(db, 'profiles', uid);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
-        setProfile(docSnap.data() as UserProfile);
+        const firestoreData = docSnap.data() as UserProfile;
+        if (!firestoreData.role && savedRole) {
+          firestoreData.role = savedRole;
+        }
+        if (firestoreData.role) {
+          localStorage.setItem(`dalil_user_role_${uid}`, firestoreData.role);
+          localStorage.setItem(`dalil_role_selected_${uid}`, 'true');
+        }
+        setProfile(firestoreData);
         return;
       }
     } catch {
@@ -91,6 +101,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const parsed = JSON.parse(saved);
         if (parsed.profile) {
+          if (!parsed.profile.role && savedRole) {
+            parsed.profile.role = savedRole;
+          }
           setProfile(parsed.profile);
           return;
         }
@@ -100,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const newProfile: UserProfile = {
       id: uid,
       email: userEmail || null,
-      role: userMetadata?.role || null,
+      role: userMetadata?.role || savedRole || 'user',
       full_name: userMetadata?.full_name || userMetadata?.displayName || (userEmail ? userEmail.split('@')[0] : 'مستخدم'),
       avatar_url: userMetadata?.photoURL || null,
     };
@@ -300,12 +313,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setProfile(updatedProfile);
 
+    // Save permanently in localStorage for this specific user
+    try {
+      localStorage.setItem(`dalil_user_role_${user.uid}`, role);
+      localStorage.setItem(`dalil_role_selected_${user.uid}`, 'true');
+    } catch {}
+
     // Save in Firestore
     try {
       await setDoc(doc(db, 'profiles', user.uid), updatedProfile, { merge: true });
     } catch {}
 
-    // Save in LocalStorage
+    // Save in LocalStorage session if exists
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (saved) {
       try {
@@ -324,7 +343,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const needsRoleSelection = !!user && !profile?.role;
+  const needsRoleSelection =
+    !!user &&
+    !profile?.role &&
+    localStorage.getItem(`dalil_role_selected_${user.uid}`) !== 'true' &&
+    !localStorage.getItem(`dalil_user_role_${user.uid}`);
 
   return (
     <AuthContext.Provider

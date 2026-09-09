@@ -3,7 +3,7 @@ import { useAuth, type UserRole, type VerificationData } from '@/lib/auth-contex
 import { useLanguage } from '@/lib/i18n';
 import {
   BriefcaseBusiness, Building2, UserRound, CheckCircle2, Loader2, Sparkles,
-  ShieldCheck, UploadCloud, Check, AlertCircle
+  ShieldCheck, UploadCloud, Check, AlertCircle, X
 } from 'lucide-react';
 import { Button } from '@/lib/ui';
 
@@ -87,6 +87,13 @@ export function RoleSelectionModal() {
       proof_file_name: proofFileName || undefined,
     };
 
+    if (user) {
+      try {
+        localStorage.setItem(`dalil_role_selected_${user.uid}`, 'true');
+        localStorage.setItem(`dalil_user_role_${user.uid}`, selectedRole);
+      } catch {}
+    }
+
     const { error: updateErr } = await updateRole(selectedRole, verificationData);
     if (updateErr) {
       setError(updateErr.message || 'حدث خطأ أثناء حفظ البيانات');
@@ -100,6 +107,23 @@ export function RoleSelectionModal() {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
     >
       <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-[#ddcdbb] bg-[#fffdf9] p-6 shadow-2xl sm:p-8">
+        <button
+          type="button"
+          onClick={() => {
+            if (user) {
+              try {
+                localStorage.setItem(`dalil_role_selected_${user.uid}`, 'true');
+                localStorage.setItem(`dalil_user_role_${user.uid}`, selectedRole || 'user');
+              } catch {}
+              updateRole(selectedRole || 'user');
+            }
+          }}
+          className="absolute top-5 left-5 grid size-9 place-items-center rounded-full bg-[#ede3d5] text-[#6b4632] hover:bg-[#3b241a] hover:text-[#fffdf9] transition-colors"
+          title={lang === 'ar' ? 'إغلاق' : 'Close'}
+        >
+          <X size={18} />
+        </button>
+
         <div className="text-center">
           <div className="mx-auto inline-flex size-14 items-center justify-center rounded-2xl bg-[#e6c58e] text-[#3b241a] shadow-inner">
             <Sparkles size={28} />
