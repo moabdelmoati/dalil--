@@ -1390,11 +1390,12 @@ function extractTextFromPdf(buffer) {
     pos = streamEnd + 9;
   }
   const allText = chunks.join(" ");
-  const matches = allText.match(/\(([^)]{2,})\)/g) || [];
-  const extracted = matches.map((m) => m.slice(1, -1)).join(" ").replace(/[^\u0600-\u06FF\w\s\d.,\-]/g, " ").replace(/\s+/g, " ").trim();
-  if (extracted.length > 20) return extracted;
-  const arabicWords = allText.match(/[\u0600-\u06FF]{2,}/g) || [];
-  return arabicWords.join(" ").trim();
+  const cleanText = allText.replace(/\/CIDInit[\s\S]*?endcmap/gi, " ");
+  const arabicWords = cleanText.match(/[\u0600-\u06FF]{2,}/g) || [];
+  if (arabicWords.length >= 10) {
+    return arabicWords.join(" ").trim();
+  }
+  return "";
 }
 function extractFilename(headerString) {
   const fnStar = headerString.match(/filename\*=utf-8''([^;\r\n]+)/i);
@@ -1537,16 +1538,16 @@ async function handler(req, res) {
         const documentTextPreview = contentText ?? "";
         const documentType = detectDocumentType(`${file.originalname} ${documentTextPreview}`);
         const groundContext = buildGroundingContext(documentType);
-        const needsInlineData = !contentText && (mimeType === "application/pdf" || mimeType.startsWith("image/"));
+        const isBinaryDocument = mimeType === "application/pdf" || mimeType.startsWith("image/");
         const geminiPromise = analyzeDocument({
           fileName: file.originalname,
           groundContext,
           pageCount,
           contentText,
-          inlineData: needsInlineData ? { mimeType, data: file.buffer.toString("base64") } : void 0
+          inlineData: isBinaryDocument ? { mimeType, data: file.buffer.toString("base64") } : void 0
         });
         const timeoutPromise = new Promise(
-          (_, reject) => setTimeout(() => reject(new Error("Gemini API timeout")), 4e4)
+          (_, reject) => setTimeout(() => reject(new Error("Gemini API timeout")), 5e4)
         );
         const result = await Promise.race([geminiPromise, timeoutPromise]);
         res.status(200).json(result);

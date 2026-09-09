@@ -71,18 +71,15 @@ function extractTextFromPdf(buffer: Buffer): string {
   }
 
   const allText = chunks.join(' ');
-  const matches = allText.match(/\(([^)]{2,})\)/g) || [];
-  const extracted = matches
-    .map((m) => m.slice(1, -1))
-    .join(' ')
-    .replace(/[^\u0600-\u06FF\w\s\d.,\-]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  // Ignore PostScript font tables or CMap data
+  const cleanText = allText.replace(/\/CIDInit[\s\S]*?endcmap/gi, ' ');
+  const arabicWords = cleanText.match(/[\u0600-\u06FF]{2,}/g) || [];
 
-  if (extracted.length > 20) return extracted;
-
-  const arabicWords = allText.match(/[\u0600-\u06FF]{2,}/g) || [];
-  return arabicWords.join(' ').trim();
+  // Only consider as extracted text if it has at least 10 real Arabic words
+  if (arabicWords.length >= 10) {
+    return arabicWords.join(' ').trim();
+  }
+  return '';
 }
 
 function extractFilename(headerString: string): string {
@@ -251,20 +248,20 @@ export default async function handler(req: any, res: any) {
         const documentType = detectDocumentType(`${file.originalname} ${documentTextPreview}`);
         const groundContext = buildGroundingContext(documentType);
 
-        // Only pass binary inlineData when plain text was not extractable (e.g. scanned images)
-        const needsInlineData = !contentText && (mimeType === 'application/pdf' || mimeType.startsWith('image/'));
+        // Always pass PDF/images as inlineData so Gemini reads full layout and high-fidelity text directly
+        const isBinaryDocument = mimeType === 'application/pdf' || mimeType.startsWith('image/');
         const geminiPromise = analyzeDocument({
           fileName: file.originalname,
           groundContext,
           pageCount,
           contentText,
-          inlineData: needsInlineData
+          inlineData: isBinaryDocument
             ? { mimeType, data: file.buffer.toString('base64') }
             : undefined,
         });
 
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Gemini API timeout')), 40000)
+          setTimeout(() => reject(new Error('Gemini API timeout')), 50000)
         );
 
         const result: any = await Promise.race([geminiPromise, timeoutPromise]);
