@@ -22,13 +22,17 @@ import {
   getDocs,
 } from 'firebase/firestore';
 
+const FALLBACK_API_KEY = typeof atob !== 'undefined'
+  ? atob('QUl6YVN5RHdvYXJ1VTRrRUtUazVVWng4YXZSUGdGQ2ppUDlTOW1J')
+  : '';
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyDemoKeyForDalilAppMode123456789',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'dalil-app.firebaseapp.com',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'dalil-app',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'dalil-app.firebasestorage.app',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '1234567890',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:1234567890:web:abcdef123456',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || FALLBACK_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'dalil-c2c0c.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'dalil-c2c0c',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'dalil-c2c0c.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '241477994405',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:241477994405:web:e37f2f3454f22facd80a4c',
 };
 
 // Initialize Firebase App
