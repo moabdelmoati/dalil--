@@ -1,6 +1,4 @@
-﻿import Busboy from 'busboy';
-import { Readable } from 'stream';
-import path from 'node:path';
+﻿import path from 'node:path';
 import mammoth from 'mammoth';
 import { detectDocumentType, buildGroundingContext } from '../lib/knowledgeBase';
 import { analyzeDocument } from '../lib/gemini';
@@ -32,73 +30,70 @@ interface ParsedFile {
   size: number;
 }
 
-function parseMultipartRequest(req: any): Promise<{ file: ParsedFile | null; error?: string }> {
-  return new Promise((resolve) => {
-    let busboy: any;
+function extractFilename(headerString: string): string {
+  const fnStar = headerString.match(/filename\*=utf-8''([^;\r\n]+)/i);
+  if (fnStar) {
     try {
-      busboy = Busboy({ headers: req.headers, limits: { fileSize: MAX_SIZE } });
-    } catch (err: any) {
-      return resolve({ file: null, error: err?.message || 'Failed to initialize parser' });
-    }
+      return decodeURIComponent(fnStar[1]);
+    } catch {}
+  }
+  const fnMatch = headerString.match(/filename="([^"]+)"/i) || headerString.match(/filename=([^\s;]+)/i);
+  return fnMatch ? fnMatch[1] : 'document.pdf';
+}
 
-    let parsedFile: ParsedFile | null = null;
-    let limitExceeded = false;
-
-    // Safety timeout: if upload takes longer than 20 seconds, resolve with error
-    const timer = setTimeout(() => {
-      resolve({ file: null, error: 'TIMEOUT' });
-    }, 20000);
-
-    busboy.on('file', (_fieldname: string, fileStream: any, fileInfo: any) => {
-      const { filename, mimeType } = fileInfo;
-      const chunks: Buffer[] = [];
-
-      fileStream.on('data', (chunk: Buffer) => {
-        chunks.push(chunk);
-      });
-
-      fileStream.on('limit', () => {
-        limitExceeded = true;
-      });
-
-      fileStream.on('end', () => {
-        const buffer = Buffer.concat(chunks);
-        parsedFile = {
-          originalname: filename || 'document',
-          mimetype: mimeType || 'application/octet-stream',
-          buffer,
-          size: buffer.length,
-        };
-      });
-    });
-
-    busboy.on('finish', () => {
-      clearTimeout(timer);
-      if (limitExceeded) {
-        return resolve({ file: null, error: 'LIMIT_FILE_SIZE' });
-      }
-      resolve({ file: parsedFile });
-    });
-
-    busboy.on('error', (err: any) => {
-      clearTimeout(timer);
-      resolve({ file: null, error: err?.message || 'Error parsing upload' });
-    });
-
-    // Check if req.body was pre-parsed into a Buffer or string by Vercel serverless runtime
-    if (req.body && (Buffer.isBuffer(req.body) || typeof req.body === 'string')) {
-      const buf = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body);
-      Readable.from(buf).pipe(busboy);
-    } else {
-      req.pipe(busboy);
-    }
+async function getRawBody(req: any): Promise<Buffer> {
+  if (req.body && Buffer.isBuffer(req.body)) {
+    return req.body;
+  }
+  if (req.body && typeof req.body === 'string') {
+    return Buffer.from(req.body, 'utf-8');
+  }
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    req.on('data', (chunk: Buffer) => chunks.push(chunk));
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
   });
+}
+
+function parseMultipartBuffer(rawBuffer: Buffer, contentType: string): ParsedFile | null {
+  const match = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+  if (!match) return null;
+  const boundary = match[1] || match[2];
+  const boundaryBuffer = Buffer.from(`--${boundary}`);
+
+  const startIndex = rawBuffer.indexOf(boundaryBuffer);
+  if (startIndex === -1) return null;
+
+  const headerStart = startIndex + boundaryBuffer.length + 2; // skip \r\n
+  const headerEnd = rawBuffer.indexOf(Buffer.from('\r\n\r\n'), headerStart);
+  if (headerEnd === -1) return null;
+
+  const headerString = rawBuffer.slice(headerStart, headerEnd).toString('utf8');
+  const originalname = extractFilename(headerString);
+
+  const ctMatch = headerString.match(/content-type:\s*([^\r\n;]+)/i);
+  const mimetype = ctMatch ? ctMatch[1].trim() : 'application/octet-stream';
+
+  const bodyStart = headerEnd + 4; // skip \r\n\r\n
+  const nextBoundary = rawBuffer.indexOf(boundaryBuffer, bodyStart);
+  if (nextBoundary === -1) return null;
+
+  // File buffer is between bodyStart and (nextBoundary - 2) to skip trailing \r\n
+  const fileBuffer = rawBuffer.slice(bodyStart, nextBoundary - 2);
+
+  return {
+    originalname,
+    mimetype,
+    buffer: fileBuffer,
+    size: fileBuffer.length,
+  };
 }
 
 function resolveMimeType(file: ParsedFile): string | null {
   const ext = path.extname(file.originalname).toLowerCase();
   if (ext === '.docx') return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-  return EXT_TO_MIME[ext] ?? null;
+  return EXT_TO_MIME[ext] ?? (file.mimetype && file.mimetype !== 'application/octet-stream' ? file.mimetype : null);
 }
 
 function estimatePageCount(buffer: Buffer, mimeType: string, text?: string): number {
@@ -116,7 +111,10 @@ function estimatePageCount(buffer: Buffer, mimeType: string, text?: string): num
 
 function isAllowedType(file: ParsedFile): boolean {
   const ext = path.extname(file.originalname).toLowerCase();
-  return ALLOWED_EXTENSIONS.has(ext);
+  if (ALLOWED_EXTENSIONS.has(ext)) return true;
+  if (file.mimetype === 'application/pdf') return true;
+  if (file.mimetype.startsWith('image/')) return true;
+  return false;
 }
 
 export default async function handler(req: any, res: any) {
@@ -134,41 +132,41 @@ export default async function handler(req: any, res: any) {
     return;
   }
 
-  const { file, error: parseError } = await parseMultipartRequest(req);
-
-  if (parseError === 'LIMIT_FILE_SIZE') {
-    res.status(400).json({ error: 'حجم الملف أكبر من ١٠ ميجابايت المسموح بها. ارجع ملفاً أصغر.' });
-    return;
-  }
-
-  if (parseError === 'TIMEOUT') {
-    res.status(408).json({ error: 'استغرق استقبال الملف وقتاً طويلاً. يرجى المحاولة مرة أخرى بملف أصغر.' });
-    return;
-  }
-
-  if (!file || !file.buffer || file.buffer.length === 0) {
-    res.status(400).json({ error: 'لم يتم رفع أي ملف. اختر ملفاً أولاً.' });
-    return;
-  }
-
-  if (!isAllowedType(file)) {
-    res.status(400).json({
-      error: 'نوع الملف غير مدعوم. الأنواع المسموحة: PDF، JPG، PNG أو DOCX.',
-    });
-    return;
-  }
-
-  const mimeType = resolveMimeType(file);
-  if (!mimeType) {
-    res.status(400).json({
-      error: 'تعذّر تحديد نوع الملف. الأنواع المسموحة: PDF، JPG، PNG أو DOCX.',
-    });
-    return;
-  }
-
   try {
+    const contentType = req.headers['content-type'] || '';
+    if (!contentType.includes('multipart/form-data')) {
+      res.status(400).json({ error: 'نوع الطلب غير صالح. يجب رفع ملف.' });
+      return;
+    }
+
+    const rawBody = await getRawBody(req);
+    if (!rawBody || rawBody.length === 0) {
+      res.status(400).json({ error: 'لم يتم استلام أي بيانات للملف.' });
+      return;
+    }
+
+    if (rawBody.length > MAX_SIZE) {
+      res.status(400).json({ error: 'حجم الملف أكبر من ١٠ ميجابايت المسموح بها. ارجع ملفاً أصغر.' });
+      return;
+    }
+
+    const file = parseMultipartBuffer(rawBody, contentType);
+    if (!file || !file.buffer || file.buffer.length === 0) {
+      res.status(400).json({ error: 'تعذّر استخراج محتوى الملف. حاول مرة أخرى.' });
+      return;
+    }
+
+    if (!isAllowedType(file)) {
+      res.status(400).json({
+        error: 'نوع الملف غير مدعوم. الأنواع المسموحة: PDF، JPG، PNG أو DOCX.',
+      });
+      return;
+    }
+
+    const mimeType = resolveMimeType(file) || 'application/pdf';
+
     let contentText: string | undefined;
-    let pageCount: number;
+    let pageCount = 1;
 
     if (mimeType.startsWith('image/') || mimeType === 'application/pdf') {
       pageCount = estimatePageCount(file.buffer, mimeType);
@@ -180,11 +178,11 @@ export default async function handler(req: any, res: any) {
         }
       }
     } else {
-      const extracted = await mammoth.extractRawText({ buffer: file.buffer });
-      contentText = extracted.value;
-      if (!contentText || contentText.trim().length === 0) {
-        res.status(400).json({ error: 'تعذّر استخراج نص من ملف DOCX. تأكد من أن الملف يحتوي على نص فعلي.' });
-        return;
+      try {
+        const extracted = await mammoth.extractRawText({ buffer: file.buffer });
+        contentText = extracted.value;
+      } catch (mammothErr) {
+        console.warn('Mammoth text extract failed:', mammothErr);
       }
       pageCount = estimatePageCount(file.buffer, mimeType, contentText);
     }
@@ -195,7 +193,7 @@ export default async function handler(req: any, res: any) {
         const documentType = detectDocumentType(`${file.originalname} ${documentTextPreview}`);
         const groundContext = buildGroundingContext(documentType);
 
-        // Run Gemini with a 35-second hard timeout so the request never hangs
+        // Run Gemini with a 30-second hard timeout
         const geminiPromise = analyzeDocument({
           fileName: file.originalname,
           groundContext,
@@ -208,7 +206,7 @@ export default async function handler(req: any, res: any) {
         });
 
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Gemini API request timed out')), 35000)
+          setTimeout(() => reject(new Error('Gemini API timeout')), 30000)
         );
 
         const result: any = await Promise.race([geminiPromise, timeoutPromise]);
