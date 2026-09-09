@@ -3,6 +3,7 @@ import express, { type Express } from 'express';
 import cors from 'cors';
 import { analyzeRouter } from './routes/analyze';
 import { askRouter } from './routes/ask';
+import { servicesChatRouter } from './routes/services-chat';
 import { initGemini } from './lib/gemini';
 import { GEMINI_API_KEY } from './config';
 
@@ -26,6 +27,7 @@ export function createApp(): Express {
   app.use('/api', analyzeRouter);
   app.use('/', askRouter);
   app.use('/api', askRouter);
+  app.use('/api', servicesChatRouter);
 
   return app;
 }

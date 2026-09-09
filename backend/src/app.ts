@@ -3,6 +3,7 @@ import express, { type Express } from 'express';
 import cors from 'cors';
 import { analyzeRouter } from './routes/analyze.ts';
 import { askRouter } from './routes/ask.ts';
+import { servicesChatRouter } from './routes/services-chat.ts';
 import { initGemini } from './lib/gemini.ts';
 
 export function createApp(): Express {
@@ -23,6 +24,7 @@ export function createApp(): Express {
 
   app.use('/api', analyzeRouter);
   app.use('/api', askRouter);
+  app.use('/api', servicesChatRouter);
 
   app.use('/api', (_req, res) => {
     res.status(404).json({ error: 'الرابط غير موجود.' });

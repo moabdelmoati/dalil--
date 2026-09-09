@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { buildGroundingContext, detectDocumentType } from '../lib/knowledgeBase.ts';
 import { askDocument, getGeminiErrorStatus, QUOTA_ERROR_MESSAGE } from '../lib/gemini.ts';
+import { askLocalModel, isLocalModelOnline } from '../lib/localAi.ts';
 import type { AskRequest } from '../types.ts';
 
 export const askRouter = Router();
@@ -30,13 +31,34 @@ askRouter.post('/ask', async (req: Request, res: Response) => {
           .map((message) => ({ role: message.role, text: message.text }))
       : [];
 
-    const answer = await askDocument({
-      documentText,
-      documentType,
-      question,
-      history,
-      groundContext,
-    });
+    let answer: string;
+    const localOnline = await isLocalModelOnline();
+    if (localOnline) {
+      try {
+        answer = await askLocalModel({
+          question,
+          documentText,
+          history,
+        });
+      } catch (localErr) {
+        console.warn('Local model failed, falling back to Gemini:', localErr);
+        answer = await askDocument({
+          documentText,
+          documentType,
+          question,
+          history,
+          groundContext,
+        });
+      }
+    } else {
+      answer = await askDocument({
+        documentText,
+        documentType,
+        question,
+        history,
+        groundContext,
+      });
+    }
 
     res.json({ answer });
   } catch (error) {

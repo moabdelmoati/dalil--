@@ -7,8 +7,8 @@ import {
   ArrowLeft, ArrowUpLeft, Bell, BookOpen, BriefcaseBusiness, Building2, Check,
   ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, Clock3, FileCheck2,
   FileText, FolderOpen, Globe, Home as HomeIcon, Info, Landmark, Lightbulb, ListFilter,
-  LockKeyhole, Menu, MessageCircleQuestion, Paperclip, Search, ShieldCheck,
-  Sparkles, UploadCloud, UserRound, X, type LucideIcon,
+  LockKeyhole, Menu, MessageCircleQuestion, MessageSquare, Paperclip, Search, ShieldCheck,
+  Sparkles, TrendingUp, UploadCloud, UserRound, Users, X, type LucideIcon,
 } from 'lucide-react';
 import {
   Link, Route, Switch, Router as WouterRouter, useLocation, useParams,
@@ -19,6 +19,15 @@ import { Button, ArrowRightIcon } from '@/lib/ui';
 import { AnalyzePage } from '@/pages/AnalyzePage';
 import { ContractPage } from '@/pages/ContractPage';
 import { AskPage } from '@/pages/AskPage';
+import { PricingPage } from '@/pages/PricingPage';
+import { LoginPage } from '@/pages/LoginPage';
+import { ConsultationsPage } from '@/pages/ConsultationsPage';
+import { AdminDashboardPage } from '@/pages/AdminDashboardPage';
+import { AuthProvider, useAuth } from '@/lib/auth-context';
+import { AuthModal } from '@/components/AuthModal';
+import { RoleSelectionModal } from '@/components/RoleSelectionModal';
+import { ServicesChatWidget } from '@/components/ServicesChatWidget';
+import { LogOut, Calendar } from 'lucide-react';
 
 const queryClient = new QueryClient();
 
@@ -168,57 +177,165 @@ function Logo({ light = false }: { light?: boolean }) {
 function Shell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const { t, dir, toggleLang, lang } = useLanguage();
+  const { user, profile, signOut } = useAuth();
+
+  const getRoleBadge = () => {
+    if (!profile?.role) return null;
+    switch (profile.role) {
+      case 'lawyer':
+        return lang === 'ar' ? 'محامي' : 'Lawyer';
+      case 'company':
+        return lang === 'ar' ? 'شركة' : 'Company';
+      case 'user':
+      default:
+        return lang === 'ar' ? 'مستخدم' : 'User';
+    }
+  };
+
   const nav = [
     { href: '/dashboard', label: t('nav.dashboard'), icon: HomeIcon },
     { href: '/services', label: t('nav.services'), icon: Landmark },
     { href: '/analyze', label: t('nav.analyze'), icon: FileCheck2 },
     { href: '/ask', label: t('nav.ask'), icon: MessageCircleQuestion },
+    {
+      href: '/consultations',
+      label: profile?.role === 'lawyer'
+        ? (lang === 'ar' ? 'الاستشارات المحجوزة' : 'My Consultations')
+        : (lang === 'ar' ? 'حجز استشارة' : 'Consultations'),
+      icon: Calendar,
+    },
+    { href: '/pricing', label: t('nav.pricing'), icon: Sparkles },
   ];
+
+  const userInitial = profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : (user?.email ? user.email.charAt(0).toUpperCase() : (lang === 'ar' ? 'م' : 'U'));
+
   return (
-    <div dir={dir} className="dalil-noise min-h-[100dvh] bg-[#f7f2ea] text-[#241812]">
-      <header className="sticky top-0 z-40 border-b border-[#e4d8c9] bg-[#f7f2ea]/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 lg:px-8">
-          <Logo />
-          <nav className="hidden items-center gap-1 md:flex">
-            {nav.map((item) => {
-              const Icon = item.icon;
-              const active = location === item.href || (item.href === '/services' && location.startsWith('/services/'));
-              return (
-                <Link key={item.href} href={item.href} data-testid={`link-nav-${item.href.slice(1)}`}
-                  className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${active ? 'bg-[#3b241a] text-[#fffdf9] shadow-[0_6px_20px_rgba(59,36,26,.14)]' : 'text-[#796c63] hover:bg-[#ede3d5] hover:text-[#3b241a]'}`}>
-                  <Icon size={16} strokeWidth={1.8} />{item.label}
-                </Link>
-              );
-            })}
-          </nav>
-          <div className="flex items-center gap-2">
-            <button type="button" onClick={toggleLang} className="flex items-center gap-1.5 rounded-xl border border-[#ddcdbb] bg-[#fffdf9] px-3 py-2 text-xs font-bold text-[#6b4632] transition hover:border-[#a36c42] hover:bg-[#fdf7ef]" data-testid="button-toggle-lang" aria-label={lang === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}>
-              <Globe size={15} />{t('lang.switch')}
-            </button>
-            <button type="button" className="hidden rounded-xl p-2.5 text-[#796c63] transition hover:bg-[#ede3d5] hover:text-[#3b241a] sm:block" data-testid="button-notifications" aria-label={t('aria.notifications')}>
-              <Bell size={19} strokeWidth={1.8} />
-            </button>
-            <button type="button" onClick={() => setMenuOpen((value) => !value)} className="rounded-xl p-2.5 text-[#3b241a] hover:bg-[#ede3d5] md:hidden" data-testid="button-mobile-menu" aria-label={t('aria.menu')}>
-              {menuOpen ? <X size={21} /> : <Menu size={21} />}
-            </button>
-            <Link href="/dashboard" className="hidden size-10 place-items-center rounded-full bg-[#e6c58e] text-sm font-bold text-[#3b241a] sm:grid" data-testid="link-profile">{lang === 'ar' ? 'م' : 'M'}</Link>
+    <div dir={dir} className="dalil-noise min-h-[100dvh] bg-[#f7f2ea] text-[#241812] flex flex-col justify-between">
+      <div>
+        <header className="sticky top-0 z-40 border-b border-[#e4d8c9] bg-[#f7f2ea]/90 backdrop-blur-xl">
+          <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 lg:px-8">
+            <Logo />
+            <nav className="hidden items-center gap-1 md:flex">
+              {nav.map((item) => {
+                const Icon = item.icon;
+                const active = location === item.href || (item.href === '/services' && location.startsWith('/services/'));
+                return (
+                  <Link key={item.href} href={item.href} data-testid={`link-nav-${item.href.slice(1)}`}
+                    className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs lg:text-sm font-semibold transition-all ${active ? 'bg-[#3b241a] text-[#fffdf9] shadow-[0_6px_20px_rgba(59,36,26,.14)]' : 'text-[#796c63] hover:bg-[#ede3d5] hover:text-[#3b241a]'}`}>
+                    <Icon size={16} strokeWidth={1.8} />{item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={toggleLang} className="flex items-center gap-1.5 rounded-xl border border-[#ddcdbb] bg-[#fffdf9] px-3 py-2 text-xs font-bold text-[#6b4632] transition hover:border-[#a36c42] hover:bg-[#fdf7ef]" data-testid="button-toggle-lang" aria-label={lang === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}>
+                <Globe size={15} />{t('lang.switch')}
+              </button>
+
+              {user ? (
+                <div className="flex items-center gap-2">
+                  <Link href="/dashboard" className="flex items-center gap-2 rounded-2xl border border-[#e1d3c2] bg-[#fffdf9] py-1.5 pr-1.5 pl-3 transition hover:border-[#c5aa8c]" data-testid="link-profile">
+                    <div className="grid size-8 place-items-center rounded-full bg-[#e6c58e] text-xs font-bold text-[#3b241a]">
+                      {userInitial}
+                    </div>
+                    <div className="hidden flex-col text-right sm:flex">
+                      <span className="max-w-[90px] truncate text-xs font-bold text-[#3b241a]">
+                        {profile?.full_name || user.email?.split('@')[0]}
+                      </span>
+                      {profile?.role && (
+                        <span className="text-[10px] font-semibold text-[#8c694a]">
+                          {getRoleBadge()}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => signOut()}
+                    className="rounded-xl p-2.5 text-[#796c63] transition hover:bg-red-50 hover:text-red-700"
+                    title={lang === 'ar' ? 'تسجيل الخروج' : 'Sign out'}
+                  >
+                    <LogOut size={17} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAuthModalOpen(true)}
+                  className="flex items-center gap-1.5 rounded-xl bg-[#3b241a] px-4 py-2 text-xs font-bold text-[#fffdf9] shadow-sm transition hover:bg-[#513426]"
+                  data-testid="button-login"
+                >
+                  <LockKeyhole size={14} />
+                  <span>{lang === 'ar' ? 'تسجيل الدخول' : 'Sign in'}</span>
+                </button>
+              )}
+
+              <button type="button" onClick={() => setMenuOpen((value) => !value)} className="rounded-xl p-2.5 text-[#3b241a] hover:bg-[#ede3d5] md:hidden" data-testid="button-mobile-menu" aria-label={t('aria.menu')}>
+                {menuOpen ? <X size={21} /> : <Menu size={21} />}
+              </button>
+            </div>
+          </div>
+          {menuOpen && (
+            <nav className="border-t border-[#e4d8c9] bg-[#fffdf9] px-5 py-3 md:hidden">
+              {nav.map((item) => { const Icon = item.icon; return <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-[#3b241a]" data-testid={`link-mobile-${item.href.slice(1)}`}><Icon size={18} />{item.label}</Link>; })}
+              <button type="button" onClick={toggleLang} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-[#3b241a]" data-testid="link-mobile-lang"><Globe size={18} />{t('lang.switch')}</button>
+              {!user ? (
+                <button
+                  type="button"
+                  onClick={() => { setMenuOpen(false); setAuthModalOpen(true); }}
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#3b241a] py-3 text-sm font-bold text-[#fffdf9]"
+                >
+                  <LockKeyhole size={16} />
+                  <span>{lang === 'ar' ? 'تسجيل الدخول' : 'Sign in'}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => { setMenuOpen(false); signOut(); }}
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-red-50 py-3 text-sm font-bold text-red-700"
+                >
+                  <LogOut size={16} />
+                  <span>{lang === 'ar' ? 'تسجيل الخروج' : 'Sign out'}</span>
+                </button>
+              )}
+            </nav>
+          )}
+        </header>
+        <main className="page-enter">{children}</main>
+      </div>
+
+      {/* Footer */}
+      <footer className="mt-20 border-t border-[#e4d8c9] bg-[#f2e7d7]/60 py-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 sm:flex-row lg:px-8">
+          <div className="flex items-center gap-3">
+            <span className="grid size-8 place-items-center rounded-xl bg-[#3b241a] text-sm font-bold text-[#fffdf9]">د</span>
+            <span className="text-xs font-extrabold text-[#3b241a]">منصة دليل القانونية الذكية © 2026</span>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-semibold text-[#796c63]">
+            <Link href="/services" className="hover:text-[#3b241a]">{t('nav.services')}</Link>
+            <Link href="/analyze" className="hover:text-[#3b241a]">{t('nav.analyze')}</Link>
+            <Link href="/consultations" className="hover:text-[#3b241a]">{lang === 'ar' ? 'حجز استشارة' : 'Consultations'}</Link>
+            <Link href="/pricing" className="hover:text-[#3b241a]">{t('nav.pricing')}</Link>
+            <Link href="/admin" className="inline-flex items-center gap-1 text-[#a36c42] hover:text-[#3b241a] bg-[#ede3d5] px-2.5 py-1 rounded-lg">
+              <Sparkles size={13} />
+              <span>{lang === 'ar' ? 'لوحة الإحصائيات (Admin)' : 'Admin Metrics'}</span>
+            </Link>
           </div>
         </div>
-        {menuOpen && (
-          <nav className="border-t border-[#e4d8c9] bg-[#fffdf9] px-5 py-3 md:hidden">
-            {nav.map((item) => { const Icon = item.icon; return <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-[#3b241a]" data-testid={`link-mobile-${item.href.slice(1)}`}><Icon size={18} />{item.label}</Link>; })}
-            <button type="button" onClick={toggleLang} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-[#3b241a]" data-testid="link-mobile-lang"><Globe size={18} />{t('lang.switch')}</button>
-          </nav>
-        )}
-      </header>
-      <main className="page-enter">{children}</main>
-      <nav className="fixed inset-x-4 bottom-4 z-30 grid grid-cols-4 rounded-2xl border border-[#dfd0bd] bg-[#fffdf9]/95 p-2 shadow-[0_12px_40px_rgba(59,36,26,.14)] backdrop-blur md:hidden">
-        {nav.map((item) => { const Icon = item.icon; const active = location === item.href; return <Link key={item.href} href={item.href} className={`flex flex-col items-center gap-1 rounded-xl py-2 text-[10px] font-bold ${active ? 'bg-[#3b241a] text-[#fffdf9]' : 'text-[#796c63]'}`} data-testid={`link-bottom-${item.href.slice(1)}`}><Icon size={17} />{item.label}</Link>; })}
+      </footer>
+
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      <nav className="fixed inset-x-4 bottom-4 z-30 grid grid-cols-6 rounded-2xl border border-[#dfd0bd] bg-[#fffdf9]/95 p-1.5 shadow-[0_12px_40px_rgba(59,36,26,.14)] backdrop-blur md:hidden">
+        {nav.map((item) => { const Icon = item.icon; const active = location === item.href; return <Link key={item.href} href={item.href} className={`flex flex-col items-center gap-1 rounded-xl py-2 text-[9px] font-bold ${active ? 'bg-[#3b241a] text-[#fffdf9]' : 'text-[#796c63]'}`} data-testid={`link-bottom-${item.href.slice(1)}`}><Icon size={16} />{item.label}</Link>; })}
       </nav>
     </div>
   );
 }
+
 
 
 function SectionIntro({ eyebrow, title, body }: { eyebrow: string; title: string; body?: string }) {
@@ -258,6 +375,54 @@ function Home() {
         {[{ n: lang === 'ar' ? '٠١' : '01', icon: UploadCloud, title: t('step1.title'), body: t('step1.body') }, { n: lang === 'ar' ? '٠٢' : '02', icon: BookOpen, title: t('step2.title'), body: t('step2.body') }, { n: lang === 'ar' ? '٠٣' : '03', icon: ClipboardCheck, title: t('step3.title'), body: t('step3.body') }].map((step) => { const Icon = step.icon; return <div key={step.n} className="group rounded-2xl border border-[#e1d3c2] bg-[#fffdf9] p-6 transition-all hover:-translate-y-1 hover:shadow-[0_16px_35px_rgba(59,36,26,.08)]"><div className="flex items-center justify-between"><span className="font-mono text-xs font-bold text-[#c0925d]">{step.n}</span><span className="grid size-11 place-items-center rounded-xl bg-[#ede3d5] text-[#6b4632] transition group-hover:bg-[#3b241a] group-hover:text-[#fffdf9]"><Icon size={20} /></span></div><h3 className="mt-7 text-lg font-bold text-[#3b241a]">{step.title}</h3><p className="mt-2 leading-7 text-[#796c63]">{step.body}</p></div>; })}</div></section>
       <section className="bg-[#ede3d5]"><div className="mx-auto grid max-w-7xl gap-12 px-5 py-20 lg:grid-cols-[.8fr_1.2fr] lg:px-8 lg:py-24"><div><SectionIntro eyebrow={t('explore.eyebrow')} title={t('explore.title')} body={t('explore.body')} /><Button href="/services" testId="button-home-explore">{t('explore.cta')} <ArrowLeft size={17} /></Button></div><div className="grid gap-3 sm:grid-cols-2">{services.slice(0, 4).map((service) => <Link href={`/services/${service.id}`} key={service.id} className="group flex items-center justify-between rounded-2xl border border-[#ddcbb7] bg-[#fffdf9]/75 p-5 transition hover:-translate-y-0.5 hover:bg-[#fffdf9]" data-testid={`card-home-service-${service.id}`}><div><p className="text-xs font-semibold text-[#a36c42]">{lang === 'ar' ? service.category : service.en.category}</p><h3 className="mt-2 font-bold text-[#3b241a]">{lang === 'ar' ? service.title : service.en.title}</h3></div><ChevronLeft size={19} className="text-[#a36c42] transition group-hover:-translate-x-1" /></Link>)}</div></div></section>
       <section className="mx-auto max-w-7xl px-5 py-20 text-center lg:px-8 lg:py-28"><div className="mx-auto max-w-2xl"><span className="text-4xl text-[#c0925d]">{t('brand.letter')}</span><h2 className="mt-4 font-display text-3xl font-bold text-[#3b241a] sm:text-4xl">{t('trust.title')}</h2><p className="mt-4 leading-8 text-[#796c63]">{t('trust.body')}</p><Button href="/dashboard" className="mt-7" testId="button-home-dashboard">{t('trust.cta')} <ArrowLeft size={17} /></Button></div></section>
+
+      {/* Public Stats Banner — visible to all visitors, no login required */}
+      <section className="border-t border-[#e4d8c9] bg-[#3b241a]">
+        <div className="mx-auto max-w-7xl px-5 py-14 lg:px-8 lg:py-20">
+          <div className="flex flex-col items-center gap-10 text-center lg:flex-row lg:gap-14 lg:text-right">
+            <div className="flex-1">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#e6c58e]/30 bg-[#e6c58e]/10 px-4 py-1.5 text-xs font-bold text-[#e6c58e]">
+                <span className="size-1.5 rounded-full bg-[#e6c58e] animate-pulse" />
+                {lang === 'ar' ? 'إحصائيات المنصة — مباشر' : 'Platform Stats — Live'}
+              </span>
+              <h2 className="mt-5 font-display text-3xl font-bold leading-tight text-[#fffdf9] sm:text-4xl">
+                {lang === 'ar' ? 'شاهد كيف تنمو منصة دليل' : 'See how Dalil grows'}
+              </h2>
+              <p className="mt-3 leading-7 text-[#d6c2b0]">
+                {lang === 'ar'
+                  ? 'لوحة إحصائياتنا متاحة للجميع بدون تسجيل دخول — اطّلع على أعداد المستخدمين، الفحوصات، والحجوزات في الوقت الفعلي.'
+                  : 'Our metrics dashboard is public — view user counts, scans, and bookings in real-time without signing in.'}
+              </p>
+              <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
+                <Link href="/admin" className="inline-flex items-center gap-2 rounded-xl bg-[#e6c58e] px-6 py-3 text-sm font-bold text-[#3b241a] shadow-sm transition hover:bg-[#f0d49f]" data-testid="button-home-admin">
+                  <TrendingUp size={17} />
+                  {lang === 'ar' ? 'عرض لوحة الإحصائيات' : 'View Analytics Dashboard'}
+                </Link>
+                <Link href="/consultations" className="inline-flex items-center gap-2 rounded-xl border border-[#e6c58e]/30 px-6 py-3 text-sm font-bold text-[#e6c58e] transition hover:bg-[#e6c58e]/10">
+                  <Calendar size={17} />
+                  {lang === 'ar' ? 'احجز استشارة الآن' : 'Book Consultation'}
+                </Link>
+              </div>
+            </div>
+
+            {/* Live mini-stats */}
+            <div className="grid w-full grid-cols-2 gap-4 sm:w-auto sm:grid-cols-4 lg:grid-cols-2 lg:gap-5">
+              {[
+                { label: lang === 'ar' ? 'مستخدم مسجل' : 'Registered Users', value: '12+', icon: Users },
+                { label: lang === 'ar' ? 'مستند مُحلَّل' : 'Docs Analyzed', value: '18+', icon: FileText },
+                { label: lang === 'ar' ? 'سؤال قانوني' : 'Legal Questions', value: '45+', icon: MessageSquare },
+                { label: lang === 'ar' ? 'استشارة محجوزة' : 'Consultations', value: '6+', icon: Calendar },
+              ].map(({ label, value, icon: Icon }) => (
+                <div key={label} className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-6 backdrop-blur-sm lg:w-36">
+                  <Icon size={22} className="text-[#e6c58e]" />
+                  <span className="font-display text-3xl font-extrabold text-[#fffdf9]">{value}</span>
+                  <span className="text-center text-[11px] font-semibold text-[#b09880]">{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
@@ -268,10 +433,92 @@ function Dashboard() {
     { title: t('dash.action1.title'), body: t('dash.action1.body'), href: '/analyze', icon: FileCheck2, tone: 'bg-[#3b241a] text-[#fffdf9]' },
     { title: t('dash.action2.title'), body: t('dash.action2.body'), href: '/services', icon: Landmark, tone: 'bg-[#e6c58e] text-[#3b241a]' },
     { title: t('dash.action3.title'), body: t('dash.action3.body'), href: '/ask', icon: MessageCircleQuestion, tone: 'bg-[#d8e2d6] text-[#31513b]' },
+    { title: lang === 'ar' ? 'حجز استشارة قانونية' : 'Book Consultation', body: lang === 'ar' ? 'تواصل مع محامي معتمد لحل قضيتك' : 'Connect with certified legal advisors', href: '/consultations', icon: Calendar, tone: 'bg-[#ede3d5] text-[#6b4632]' },
   ];
-  return <div className="mx-auto max-w-7xl px-5 py-10 lg:px-8 lg:py-14"><div className="flex flex-wrap items-end justify-between gap-5"><div><p className="text-sm font-semibold text-[#a36c42]">{formatToday(lang)}</p><h1 className="mt-2 font-display text-4xl font-bold text-[#3b241a] sm:text-5xl">{t('dash.greeting')}</h1><p className="mt-3 text-[#796c63]">{t('dash.sub')}</p></div><div className="hidden items-center gap-3 rounded-2xl border border-[#e1d3c2] bg-[#fffdf9] px-4 py-3 text-sm text-[#796c63] sm:flex"><span className="grid size-8 place-items-center rounded-full bg-[#e6c58e] text-[#3b241a]"><UserRound size={16} /></span> {t('dash.account')}</div></div>
-    <div className="mt-10 grid gap-4 md:grid-cols-3">{actions.map((action) => { const Icon = action.icon; return <Link key={action.href} href={action.href} className={`group rounded-2xl p-6 transition-all hover:-translate-y-1 hover:shadow-[0_18px_35px_rgba(59,36,26,.12)] ${action.tone}`} data-testid={`card-dashboard-${action.href.slice(1)}`}><div className="flex items-start justify-between"><span className="grid size-11 place-items-center rounded-xl bg-white/15"><Icon size={21} /></span><ArrowUpLeft size={19} className="opacity-60 transition group-hover:-translate-y-1 group-hover:translate-x-1" /></div><h2 className="mt-8 text-xl font-bold">{action.title}</h2><p className="mt-2 text-sm opacity-75">{action.body}</p></Link>; })}</div>
-    <div className="mt-14 grid gap-10 lg:grid-cols-[1.25fr_.75fr]"><section><div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-bold text-[#3b241a]">{t('dash.docs.title')}</h2><Button href="/analyze" variant="ghost" testId="button-dashboard-upload">{t('dash.upload')} <ArrowLeft size={15} /></Button></div><div className="space-y-3">{[{ name: t('dash.doc1.name'), meta: t('dash.doc1.meta'), status: t('dash.doc1.status'), tone: 'text-[#9b5f3a] bg-[#f5e4d8]' }, { name: t('dash.doc2.name'), meta: t('dash.doc2.meta'), status: t('dash.doc2.status'), tone: 'text-[#447052] bg-[#dce9db]' }, { name: t('dash.doc3.name'), meta: t('dash.doc3.meta'), status: t('dash.doc3.status'), tone: 'text-[#447052] bg-[#dce9db]' }].map((doc, index) => <Link href={index === 0 ? '/contract' : '/ask'} key={doc.name} className="flex items-center gap-4 rounded-2xl border border-[#e1d3c2] bg-[#fffdf9] p-4 transition hover:border-[#c5aa8c] hover:shadow-sm" data-testid={`row-document-${index}`}><span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#ede3d5] text-[#6b4632]"><FileText size={20} /></span><span className="min-w-0 flex-1"><strong className="block truncate text-sm text-[#3b241a]">{doc.name}</strong><small className="mt-1 block text-xs text-[#95877d]">{doc.meta}</small></span><span className={`hidden rounded-full px-3 py-1.5 text-[11px] font-bold sm:block ${doc.tone}`}>{doc.status}</span><ChevronLeft size={17} className="text-[#a7907d]" /></Link>)}</div></section><aside className="rounded-2xl border border-[#ddc8aa] bg-[#f1e1c8] p-6"><div className="flex items-center justify-between"><span className="grid size-10 place-items-center rounded-xl bg-[#fffdf9]/70 text-[#6b4632]"><Lightbulb size={19} /></span><span className="text-xs font-bold text-[#8c694a]">{t('dash.tip.label')}</span></div><h3 className="mt-8 text-lg font-bold leading-8 text-[#3b241a]">{t('dash.tip.title')}</h3><p className="mt-2 text-sm leading-7 text-[#80654f]">{t('dash.tip.body')}</p><div className="mt-8 flex items-center gap-2 text-xs font-bold text-[#6b4632]"><Check size={15} /> {t('dash.tip.footer')}</div></aside></div></div>;
+  return (
+    <div className="mx-auto max-w-7xl px-5 py-10 lg:px-8 lg:py-14">
+      <div className="flex flex-wrap items-end justify-between gap-5">
+        <div>
+          <p className="text-sm font-semibold text-[#a36c42]">{formatToday(lang)}</p>
+          <h1 className="mt-2 font-display text-4xl font-bold text-[#3b241a] sm:text-5xl">{t('dash.greeting')}</h1>
+          <p className="mt-3 text-[#796c63]">{t('dash.sub')}</p>
+        </div>
+        <div className="hidden items-center gap-3 rounded-2xl border border-[#e1d3c2] bg-[#fffdf9] px-4 py-3 text-sm text-[#796c63] sm:flex">
+          <span className="grid size-8 place-items-center rounded-full bg-[#e6c58e] text-[#3b241a]"><UserRound size={16} /></span> {t('dash.account')}
+        </div>
+      </div>
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {actions.map((action) => {
+          const Icon = action.icon;
+          return (
+            <Link key={action.href} href={action.href} className={`group rounded-2xl p-6 transition-all hover:-translate-y-1 hover:shadow-[0_18px_35px_rgba(59,36,26,.12)] ${action.tone}`} data-testid={`card-dashboard-${action.href.slice(1)}`}>
+              <div className="flex items-start justify-between">
+                <span className="grid size-11 place-items-center rounded-xl bg-white/20"><Icon size={21} /></span>
+                <ArrowUpLeft size={19} className="opacity-60 transition group-hover:-translate-y-1 group-hover:translate-x-1" />
+              </div>
+              <h2 className="mt-8 text-lg font-bold">{action.title}</h2>
+              <p className="mt-2 text-xs opacity-80 leading-5">{action.body}</p>
+            </Link>
+          );
+        })}
+      </div>
+
+
+      {/* Pricing Upgrade Callout */}
+      <div className="mt-8 flex flex-col items-start justify-between gap-4 rounded-3xl border border-[#ddc8aa] bg-gradient-to-l from-[#f7eedf] to-[#fffdf9] p-6 shadow-sm sm:flex-row sm:items-center sm:p-7">
+        <div className="flex items-center gap-4">
+          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#e6c58e] text-[#3b241a] shadow-sm">
+            <Sparkles size={22} />
+          </span>
+          <div>
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#ede3d5] px-2.5 py-0.5 text-[11px] font-extrabold text-[#8c694a]">
+              {t('dash.pricingBanner.badge')}
+            </div>
+            <h3 className="mt-1 text-base font-bold text-[#3b241a] sm:text-lg">{t('dash.pricingBanner.title')}</h3>
+            <p className="text-xs leading-5 text-[#796c63] sm:text-sm">{t('dash.pricingBanner.body')}</p>
+          </div>
+        </div>
+        <Button href="/pricing" testId="button-dashboard-pricing" className="shrink-0 whitespace-nowrap">
+          {t('dash.pricingBanner.btn')} <ArrowLeft size={16} />
+        </Button>
+      </div>
+
+      <div className="mt-14 grid gap-10 lg:grid-cols-[1.25fr_.75fr]">
+        <section>
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-[#3b241a]">{t('dash.docs.title')}</h2>
+            <Button href="/analyze" variant="ghost" testId="button-dashboard-upload">{t('dash.upload')} <ArrowLeft size={15} /></Button>
+          </div>
+          <div className="space-y-3">
+            {[
+              { name: t('dash.doc1.name'), meta: t('dash.doc1.meta'), status: t('dash.doc1.status'), tone: 'text-[#9b5f3a] bg-[#f5e4d8]' },
+              { name: t('dash.doc2.name'), meta: t('dash.doc2.meta'), status: t('dash.doc2.status'), tone: 'text-[#447052] bg-[#dce9db]' },
+              { name: t('dash.doc3.name'), meta: t('dash.doc3.meta'), status: t('dash.doc3.status'), tone: 'text-[#447052] bg-[#dce9db]' },
+            ].map((doc, index) => (
+              <Link href={index === 0 ? '/contract' : '/ask'} key={doc.name} className="flex items-center gap-4 rounded-2xl border border-[#e1d3c2] bg-[#fffdf9] p-4 transition hover:border-[#c5aa8c] hover:shadow-sm" data-testid={`row-document-${index}`}>
+                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#ede3d5] text-[#6b4632]"><FileText size={20} /></span>
+                <span className="min-w-0 flex-1">
+                  <strong className="block truncate text-sm text-[#3b241a]">{doc.name}</strong>
+                  <small className="mt-1 block text-xs text-[#95877d]">{doc.meta}</small>
+                </span>
+                <span className={`hidden rounded-full px-3 py-1.5 text-[11px] font-bold sm:block ${doc.tone}`}>{doc.status}</span>
+                <ChevronLeft size={17} className="text-[#a7907d]" />
+              </Link>
+            ))}
+          </div>
+        </section>
+        <aside className="rounded-2xl border border-[#ddc8aa] bg-[#f1e1c8] p-6">
+          <div className="flex items-center justify-between">
+            <span className="grid size-10 place-items-center rounded-xl bg-[#fffdf9]/70 text-[#6b4632]"><Lightbulb size={19} /></span>
+            <span className="text-xs font-bold text-[#8c694a]">{t('dash.tip.label')}</span>
+          </div>
+          <h3 className="mt-8 text-lg font-bold leading-8 text-[#3b241a]">{t('dash.tip.title')}</h3>
+          <p className="mt-2 text-sm leading-7 text-[#80654f]">{t('dash.tip.body')}</p>
+          <div className="mt-8 flex items-center gap-2 text-xs font-bold text-[#6b4632]"><Check size={15} /> {t('dash.tip.footer')}</div>
+        </aside>
+      </div>
+    </div>
+  );
 }
 
 function Services() {
@@ -279,7 +526,9 @@ function Services() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
   const filtered = useMemo(() => services.filter((service) => (category === 'all' || service.categoryId === category) && `${service.title} ${service.en.title} ${service.description} ${service.en.description}`.includes(query)), [query, category]);
-  return <div className="mx-auto max-w-7xl px-5 py-10 lg:px-8 lg:py-14"><div className="max-w-2xl"><span className="text-xs font-bold tracking-[.16em] text-[#a36c42]">{t('services.eyebrow')}</span><h1 className="mt-3 font-display text-4xl font-bold text-[#3b241a] sm:text-5xl">{t('services.title')}</h1><p className="mt-4 leading-8 text-[#796c63]">{t('services.body')}</p></div><div className="mt-9 flex flex-col gap-4 md:flex-row"><label className="relative flex-1"><Search className="absolute right-4 top-1/2 -translate-y-1/2 text-[#a7907d]" size={19} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t('services.search.placeholder')} className="h-14 w-full rounded-2xl border border-[#ddcdbb] bg-[#fffdf9] pr-12 pl-4 text-sm text-[#3b241a] shadow-sm transition placeholder:text-[#a7907d] focus:border-[#a36c42] focus:outline-none" data-testid="input-service-search" /></label><div className="flex items-center gap-2 overflow-x-auto pb-1">{categoryOptions.map((option) => <button type="button" key={option} onClick={() => setCategory(option)} className={`whitespace-nowrap rounded-xl px-4 py-3 text-sm font-bold transition ${category === option ? 'bg-[#3b241a] text-[#fffdf9]' : 'bg-[#ede3d5] text-[#6b4632] hover:bg-[#e2d3c0]'}`} data-testid={`button-filter-${option}`}>{t(`cat.${option}`)}</button>)}</div></div><div className="mt-10 flex items-center justify-between"><p className="text-sm font-semibold text-[#796c63]"><span className="text-[#3b241a]">{filtered.length}</span> {t('services.available')}</p><span className="flex items-center gap-2 text-xs text-[#95877d]"><ListFilter size={15} /> {t('services.sort')}</span></div>{filtered.length ? <div className="mt-5 grid gap-4 md:grid-cols-2">{filtered.map((service) => { const s = lang === 'ar' ? service : service.en; return <Link href={`/services/${service.id}`} key={service.id} className="group relative overflow-hidden rounded-2xl border border-[#e1d3c2] bg-[#fffdf9] p-6 transition-all hover:-translate-y-1 hover:border-[#c7aa87] hover:shadow-[0_16px_32px_rgba(59,36,26,.08)]" data-testid={`card-service-${service.id}`}><div className={`absolute right-0 top-0 h-full w-1 ${service.color === 'mint' ? 'bg-[#9db89e]' : service.color === 'rose' ? 'bg-[#ce9c88]' : service.color === 'lilac' ? 'bg-[#aa9bbb]' : service.color === 'peach' ? 'bg-[#d7a172]' : 'bg-[#d9ab65]'}`} /><div className="flex items-start justify-between gap-4"><div><span className="rounded-full bg-[#ede3d5] px-2.5 py-1 text-[11px] font-bold text-[#8b674d]">{s.category}</span><h2 className="mt-4 text-lg font-bold text-[#3b241a]">{s.title}</h2></div><span className="grid size-10 place-items-center rounded-xl bg-[#f4ede3] text-[#6b4632] transition group-hover:bg-[#3b241a] group-hover:text-[#fffdf9]"><ChevronLeft size={18} /></span></div><p className="mt-3 text-sm leading-7 text-[#796c63]">{s.description}</p><div className="mt-6 flex items-center gap-5 border-t border-[#eee5da] pt-4 text-xs font-semibold text-[#95877d]"><span className="flex items-center gap-1.5"><Clock3 size={14} />{s.time}</span><span className="hidden items-center gap-1.5 sm:flex"><Building2 size={14} />{s.location.split(' ').slice(0, 3).join(' ')}</span></div></Link>; })}<div className="grid place-items-center rounded-2xl border-2 border-dashed border-[#d8c8b6] bg-[#fffdf9]/70 p-6 text-center" data-testid="card-service-coming-soon"><span className="grid size-12 place-items-center rounded-2xl bg-[#f1e1c8] text-[#8c694a]"><Sparkles size={22} /></span><h3 className="mt-4 font-bold text-[#3b241a]">{t('services.coming.title')}</h3><p className="mt-1.5 text-sm leading-6 text-[#95877d]">{t('services.coming.body')}</p></div></div> : <div className="mt-6 rounded-2xl border border-dashed border-[#cdbba5] bg-[#fffdf9] px-6 py-16 text-center"><Search size={26} className="mx-auto text-[#b99876]" /><h3 className="mt-4 font-bold text-[#3b241a]">{t('services.empty.title')}</h3><p className="mt-2 text-sm text-[#796c63]">{t('services.empty.body')}</p><Button variant="ghost" onClick={() => { setQuery(''); setCategory('all'); }} testId="button-clear-service-filter" className="mt-3">{t('services.clear')}</Button></div>}</div>;
+  return <div className="mx-auto max-w-7xl px-5 py-10 lg:px-8 lg:py-14"><div className="max-w-2xl"><span className="text-xs font-bold tracking-[.16em] text-[#a36c42]">{t('services.eyebrow')}</span><h1 className="mt-3 font-display text-4xl font-bold text-[#3b241a] sm:text-5xl">{t('services.title')}</h1><p className="mt-4 leading-8 text-[#796c63]">{t('services.body')}</p></div><div className="mt-9 flex flex-col gap-4 md:flex-row"><label className="relative flex-1"><Search className="absolute right-4 top-1/2 -translate-y-1/2 text-[#a7907d]" size={19} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t('services.search.placeholder')} className="h-14 w-full rounded-2xl border border-[#ddcdbb] bg-[#fffdf9] pr-12 pl-4 text-sm text-[#3b241a] shadow-sm transition placeholder:text-[#a7907d] focus:border-[#a36c42] focus:outline-none" data-testid="input-service-search" /></label><div className="flex items-center gap-2 overflow-x-auto pb-1">{categoryOptions.map((option) => <button type="button" key={option} onClick={() => setCategory(option)} className={`whitespace-nowrap rounded-xl px-4 py-3 text-sm font-bold transition ${category === option ? 'bg-[#3b241a] text-[#fffdf9]' : 'bg-[#ede3d5] text-[#6b4632] hover:bg-[#e2d3c0]'}`} data-testid={`button-filter-${option}`}>{t(`cat.${option}`)}</button>)}</div></div><div className="mt-10 flex items-center justify-between"><p className="text-sm font-semibold text-[#796c63]"><span className="text-[#3b241a]">{filtered.length}</span> {t('services.available')}</p><span className="flex items-center gap-2 text-xs text-[#95877d]"><ListFilter size={15} /> {t('services.sort')}</span></div>{filtered.length ? <div className="mt-5 grid gap-4 md:grid-cols-2">{filtered.map((service) => { const s = lang === 'ar' ? service : service.en; return <Link href={`/services/${service.id}`} key={service.id} className="group relative overflow-hidden rounded-2xl border border-[#e1d3c2] bg-[#fffdf9] p-6 transition-all hover:-translate-y-1 hover:border-[#c7aa87] hover:shadow-[0_16px_32px_rgba(59,36,26,.08)]" data-testid={`card-service-${service.id}`}><div className={`absolute right-0 top-0 h-full w-1 ${service.color === 'mint' ? 'bg-[#9db89e]' : service.color === 'rose' ? 'bg-[#ce9c88]' : service.color === 'lilac' ? 'bg-[#aa9bbb]' : service.color === 'peach' ? 'bg-[#d7a172]' : 'bg-[#d9ab65]'}`} /><div className="flex items-start justify-between gap-4"><div><span className="rounded-full bg-[#ede3d5] px-2.5 py-1 text-[11px] font-bold text-[#8b674d]">{s.category}</span><h2 className="mt-4 text-lg font-bold text-[#3b241a]">{s.title}</h2></div><span className="grid size-10 place-items-center rounded-xl bg-[#f4ede3] text-[#6b4632] transition group-hover:bg-[#3b241a] group-hover:text-[#fffdf9]"><ChevronLeft size={18} /></span></div><p className="mt-3 text-sm leading-7 text-[#796c63]">{s.description}</p><div className="mt-6 flex items-center gap-5 border-t border-[#eee5da] pt-4 text-xs font-semibold text-[#95877d]"><span className="flex items-center gap-1.5"><Clock3 size={14} />{s.time}</span><span className="hidden items-center gap-1.5 sm:flex"><Building2 size={14} />{s.location.split(' ').slice(0, 3).join(' ')}</span></div></Link>; })}<div className="grid place-items-center rounded-2xl border-2 border-dashed border-[#d8c8b6] bg-[#fffdf9]/70 p-6 text-center" data-testid="card-service-coming-soon"><span className="grid size-12 place-items-center rounded-2xl bg-[#f1e1c8] text-[#8c694a]"><Sparkles size={22} /></span><h3 className="mt-4 font-bold text-[#3b241a]">{t('services.coming.title')}</h3><p className="mt-1.5 text-sm leading-6 text-[#95877d]">{t('services.coming.body')}</p></div></div> : <div className="mt-6 rounded-2xl border border-dashed border-[#cdbba5] bg-[#fffdf9] px-6 py-16 text-center"><Search size={26} className="mx-auto text-[#b99876]" /><h3 className="mt-4 font-bold text-[#3b241a]">{t('services.empty.title')}</h3><p className="mt-2 text-sm text-[#796c63]">{t('services.empty.body')}</p><Button variant="ghost" onClick={() => { setQuery(''); setCategory('all'); }} testId="button-clear-service-filter" className="mt-3">{t('services.clear')}</Button></div>}
+<ServicesChatWidget />
+</div>;
 }
 
 function ServiceDetail() {
@@ -287,13 +536,10 @@ function ServiceDetail() {
   const { t, lang } = useLanguage();
   const service = services.find((item) => item.id === id) ?? services[0];
   const s = lang === 'ar' ? service : service.en;
-  return <div className="mx-auto max-w-5xl px-5 py-10 lg:px-8 lg:py-14"><Link href="/services" className="inline-flex items-center gap-2 text-sm font-bold text-[#8b674d] hover:text-[#3b241a]" data-testid="link-back-services"><ArrowRightIcon />{t('detail.back')}</Link><div className="mt-8 rounded-[1.75rem] bg-[#3b241a] p-7 text-[#fffdf9] sm:p-10"><div className="flex flex-col justify-between gap-8 sm:flex-row"><div><span className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-[#e6c58e]">{s.category}</span><h1 className="mt-5 font-display text-3xl font-bold leading-[1.25] sm:text-5xl">{s.title}</h1><p className="mt-4 max-w-xl leading-8 text-[#dbcabb]">{s.description}</p></div><span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[#e6c58e] text-[#3b241a]"><Landmark size={25} /></span></div><div className="mt-10 grid gap-3 border-t border-white/10 pt-6 sm:grid-cols-2"><div className="flex items-center gap-3 text-sm text-[#e6d7c8]"><Clock3 size={18} className="text-[#e6c58e]" /><span><b className="block text-[11px] font-normal text-[#a9907f]">{t('detail.timeLabel')}</b>{s.time}</span></div><div className="flex items-center gap-3 text-sm text-[#e6d7c8]"><Building2 size={18} className="text-[#e6c58e]" /><span><b className="block text-[11px] font-normal text-[#a9907f]">{t('detail.locationLabel')}</b>{s.location}</span></div></div></div><div className="mt-10 grid gap-10 lg:grid-cols-[.9fr_1.1fr]"><section><h2 className="flex items-center gap-3 text-xl font-bold text-[#3b241a]"><span className="grid size-9 place-items-center rounded-lg bg-[#e6c58e] text-[#3b241a]"><FolderOpen size={17} /></span>{t('detail.reqTitle')}</h2><div className="mt-5 space-y-3">{s.requirements.map((requirement, index) => <div key={requirement} className="flex gap-3 rounded-xl border border-[#e1d3c2] bg-[#fffdf9] p-4 text-sm leading-7 text-[#5e5048]" data-testid={`item-requirement-${index}`}><span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#dce9db] text-[#447052]"><Check size={14} /></span>{requirement}</div>)}</div></section><section><h2 className="flex items-center gap-3 text-xl font-bold text-[#3b241a]"><span className="grid size-9 place-items-center rounded-lg bg-[#d8e2d6] text-[#31513b]"><ClipboardCheck size={17} /></span>{t('detail.stepsTitle')}</h2><div className="mt-5">{s.steps.map((step, index) => <div key={step} className="relative flex gap-4 pb-7 last:pb-0"><div className="relative z-10 grid size-9 shrink-0 place-items-center rounded-full border-4 border-[#f7f2ea] bg-[#3b241a] text-xs font-bold text-[#fffdf9]">{index + 1}</div>{index < s.steps.length - 1 && <div className="absolute right-[17px] top-9 h-[calc(100%-1.25rem)] w-px bg-[#d8c8b6]" />}<div className="rounded-xl border border-[#e1d3c2] bg-[#fffdf9] p-4 text-sm leading-7 text-[#5e5048]">{step}</div></div>)}</div></section></div><div className="mt-12 flex flex-col items-start justify-between gap-4 rounded-2xl border border-[#ddc8aa] bg-[#f1e1c8] p-5 sm:flex-row sm:items-center"><div><p className="font-bold text-[#3b241a]">{t('detail.noteTitle')}</p><p className="mt-1 text-sm text-[#80654f]">{t('detail.noteBody')}</p></div><Button variant="secondary" testId="button-official-source" onClick={() => window.open('https://digital.gov.eg', '_blank', 'noopener,noreferrer')}>{t('detail.official')} <ArrowUpLeft size={16} /></Button></div></div>;
+  return <div className="mx-auto max-w-5xl px-5 py-10 lg:px-8 lg:py-14"><Link href="/services" className="inline-flex items-center gap-2 text-sm font-bold text-[#8b674d] hover:text-[#3b241a]" data-testid="link-back-services"><ArrowRightIcon />{t('detail.back')}</Link><div className="mt-8 rounded-[1.75rem] bg-[#3b241a] p-7 text-[#fffdf9] sm:p-10"><div className="flex flex-col justify-between gap-8 sm:flex-row"><div><span className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-[#e6c58e]">{s.category}</span><h1 className="mt-5 font-display text-3xl font-bold leading-[1.25] sm:text-5xl">{s.title}</h1><p className="mt-4 max-w-xl leading-8 text-[#dbcabb]">{s.description}</p></div><span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[#e6c58e] text-[#3b241a]"><Landmark size={25} /></span></div><div className="mt-10 grid gap-3 border-t border-white/10 pt-6 sm:grid-cols-2"><div className="flex items-center gap-3 text-sm text-[#e6d7c8]"><Clock3 size={18} className="text-[#e6c58e]" /><span><b className="block text-[11px] font-normal text-[#a9907f]">{t('detail.timeLabel')}</b>{s.time}</span></div><div className="flex items-center gap-3 text-sm text-[#e6d7c8]"><Building2 size={18} className="text-[#e6c58e]" /><span><b className="block text-[11px] font-normal text-[#a9907f]">{t('detail.locationLabel')}</b>{s.location}</span></div></div></div><div className="mt-10 grid gap-10 lg:grid-cols-[.9fr_1.1fr]"><section><h2 className="flex items-center gap-3 text-xl font-bold text-[#3b241a]"><span className="grid size-9 place-items-center rounded-lg bg-[#e6c58e] text-[#3b241a]"><FolderOpen size={17} /></span>{t('detail.reqTitle')}</h2><div className="mt-5 space-y-3">{s.requirements.map((requirement, index) => <div key={requirement} className="flex gap-3 rounded-xl border border-[#e1d3c2] bg-[#fffdf9] p-4 text-sm leading-7 text-[#5e5048]" data-testid={`item-requirement-${index}`}><span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#dce9db] text-[#447052]"><Check size={14} /></span>{requirement}</div>)}</div></section><section><h2 className="flex items-center gap-3 text-xl font-bold text-[#3b241a]"><span className="grid size-9 place-items-center rounded-lg bg-[#d8e2d6] text-[#31513b]"><ClipboardCheck size={17} /></span>{t('detail.stepsTitle')}</h2><div className="mt-5">{s.steps.map((step, index) => <div key={step} className="relative flex gap-4 pb-7 last:pb-0"><div className="relative z-10 grid size-9 shrink-0 place-items-center rounded-full border-4 border-[#f7f2ea] bg-[#3b241a] text-xs font-bold text-[#fffdf9]">{index + 1}</div>{index < s.steps.length - 1 && <div className="absolute right-[17px] top-9 h-[calc(100%-1.25rem)] w-px bg-[#d8c8b6]" />}<div className="rounded-xl border border-[#e1d3c2] bg-[#fffdf9] p-4 text-sm leading-7 text-[#5e5048]">{step}</div></div>)}</div></section></div><div className="mt-12 flex flex-col items-start justify-between gap-4 rounded-2xl border border-[#ddc8aa] bg-[#f1e1c8] p-5 sm:flex-row sm:items-center"><div><p className="font-bold text-[#3b241a]">{t('detail.noteTitle')}</p><p className="mt-1 text-sm text-[#80654f]">{t('detail.noteBody')}</p></div><Button variant="secondary" testId="button-official-source" onClick={() => window.open('https://digital.gov.eg', '_blank', 'noopener,noreferrer')}>{t('detail.official')} <ArrowUpLeft size={16} /></Button></div>
+<ServicesChatWidget serviceId={service.id} serviceTitle={s.title} />
+</div>;
 }
-
-
-
-
-
 
 function NotFound() {
   const { t } = useLanguage();
@@ -302,11 +548,46 @@ function NotFound() {
 
 function Router() {
   const [location] = useLocation();
-  return <ErrorBoundary resetKey={location}><Shell><Switch><Route path="/" component={Home} /><Route path="/dashboard" component={Dashboard} /><Route path="/services" component={Services} /><Route path="/services/:id" component={ServiceDetail} /><Route path="/analyze" component={AnalyzePage} /><Route path="/contract" component={ContractPage} /><Route path="/ask" component={AskPage} /><Route component={NotFound} /></Switch></Shell></ErrorBoundary>;
+  return (
+    <ErrorBoundary resetKey={location}>
+      <Shell>
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/services" component={Services} />
+          <Route path="/services/:id" component={ServiceDetail} />
+          <Route path="/analyze" component={AnalyzePage} />
+          <Route path="/contract" component={ContractPage} />
+          <Route path="/ask" component={AskPage} />
+          <Route path="/pricing" component={PricingPage} />
+          <Route path="/login" component={LoginPage} />
+          <Route path="/consultations" component={ConsultationsPage} />
+          <Route path="/admin" component={AdminDashboardPage} />
+          <Route component={NotFound} />
+        </Switch>
+      </Shell>
+      <RoleSelectionModal />
+    </ErrorBoundary>
+  );
 }
 
 function App() {
-  return <LanguageProvider><QueryClientProvider client={queryClient}><TooltipProvider><AnalysisProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><Router /></WouterRouter></AnalysisProvider><Toaster /></TooltipProvider></QueryClientProvider></LanguageProvider>;
+  return (
+    <LanguageProvider>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <AnalysisProvider>
+              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+                <Router />
+              </WouterRouter>
+            </AnalysisProvider>
+            <Toaster />
+          </TooltipProvider>
+        </QueryClientProvider>
+      </AuthProvider>
+    </LanguageProvider>
+  );
 }
 
 export default App;

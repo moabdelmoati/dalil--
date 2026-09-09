@@ -21,7 +21,7 @@ export async function initGemini(apiKey: string): Promise<void> {
 }
 
 function model(): string {
-  return GEMINI_MODEL || 'gemini-2.5-flash';
+  return GEMINI_MODEL || 'gemini-3.6-flash';
 }
 
 async function getClient(): Promise<any> {

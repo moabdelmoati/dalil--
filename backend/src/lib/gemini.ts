@@ -17,7 +17,7 @@ export function initGemini(apiKey: string): void {
 }
 
 function model(): string {
-  return process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+  return process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 }
 
 function getClient(): GoogleGenAI {
