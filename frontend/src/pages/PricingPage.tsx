@@ -29,6 +29,9 @@ interface PlanItem {
   descEn: string;
   monthlyPrice: number;
   annualPrice: number;
+  customPriceText?: string;
+  customPriceTextEn?: string;
+  isCustom?: boolean;
   isDark?: boolean;
   highlight?: boolean;
   specs: {
@@ -53,22 +56,24 @@ const mainPlans: PlanItem[] = [
     monthlyPrice: 0,
     annualPrice: 0,
     specs: {
-      docs: '5 مستندات / شهر',
+      docs: '2 مستند / شهر',
       size: 'أقصى حجم: 10 ميجابايت',
       storage: 'مساحة تخزين: 100 ميجابايت',
       ai: 'تحليل الذكاء الاصطناعي: محدود',
-      questions: '20 سؤال للمستند',
+      questions: '5 أسئلة للمستند',
     },
     features: [
+      '2 فحص مستند كل شهر',
       'دعم ملفات PDF و DOCX والصور',
       'ملخص شامل لمحتوى المستند',
-      '20 سؤال ذكي لكل مستند',
+      '5 أسئلة ذكية لكل مستند',
       'دعم مجتمعي وتحديثات مستمرة',
     ],
     featuresEn: [
+      '2 Document audits per month',
       'Supports PDF, DOCX, and Images',
       'Comprehensive Document Summary',
-      '20 AI questions per document',
+      '5 AI questions per document',
       'Community support & updates',
     ],
   },
@@ -84,23 +89,23 @@ const mainPlans: PlanItem[] = [
     monthlyPrice: 49,
     annualPrice: 39,
     specs: {
-      docs: '30 مستند / شهر',
+      docs: '10 مستندات / شهر',
       size: 'أقصى حجم: 20 ميجابايت',
       storage: 'مساحة تخزين: 500 ميجابايت',
       ai: 'تحليل الذكاء الاصطناعي: كامل',
-      questions: '150 سؤال للمستند',
+      questions: '30 سؤال للمستند',
     },
     features: [
-      '30 فحص مستند كل شهر',
+      '10 فحوصات مستندات كل شهر',
       'استخراج الأطراف والمعلومات الأساسية',
-      '150 سؤال تفاعلي للمستندات',
+      '30 سؤال تفاعلي للمستندات',
       'حفظ سجل المستندات السابقة',
       'دعم فني أساسي سريع',
     ],
     featuresEn: [
-      '30 Document audits per month',
+      '10 Document audits per month',
       'Key Information Extraction',
-      '150 Interactive AI questions',
+      '30 Interactive AI questions',
       'Document History access',
       'Fast basic support',
     ],
@@ -119,24 +124,24 @@ const mainPlans: PlanItem[] = [
     isDark: true,
     highlight: true,
     specs: {
-      docs: '100 مستند / شهر',
+      docs: '30 مستند / شهر',
       size: 'أقصى حجم: 30 ميجابايت',
       storage: 'مساحة تخزين: 2 جيجابايت',
       ai: 'تحليل الذكاء الاصطناعي: متقدم',
-      questions: '500 سؤال للمستند',
+      questions: '100 سؤال للمستند',
     },
     features: [
-      '100 فحص مستند شهرياً مع أرشفة سحابية',
+      '30 فحص مستند شهرياً مع أرشفة سحابية',
       'فحص قانوني متقدم وكشف الشروط الجزائية والثغرات',
-      '500 سؤال تفاعلي باللهجة المصرية والمواد القانونية',
+      '100 سؤال تفاعلي باللهجة المصرية والمواد القانونية',
       'تصدير تقارير مراجعة تفصيلية PDF قابلة للطباعة',
       'سجل كامل لحفظ العقود وتاريخ التعديلات',
       'دعم فني ذو أولوية خاصة',
     ],
     featuresEn: [
-      '100 Document audits per month with cloud vault',
+      '30 Document audits per month with cloud vault',
       'Advanced Legal Risk & Penalty Audit',
-      '500 Contextual AI questions with legal citations',
+      '100 Contextual AI questions with legal citations',
       'Export detailed printable PDF reports',
       'Full Document History & Revision Logs',
       'Priority Support',
@@ -146,35 +151,35 @@ const mainPlans: PlanItem[] = [
 
 const advancedPlans: PlanItem[] = [
   {
-    id: 'professional',
-    name: 'مهني (Professional)',
-    nameEn: 'Professional',
+    id: 'lawyer',
+    name: 'باقة المحامي (Lawyer)',
+    nameEn: 'Lawyer / Counsel',
     icon: '💼',
-    badge: 'للخبراء والمستشارين',
-    badgeEn: 'For Consultants',
-    desc: 'للمستشارين، مكاتب المحاماة، ومسؤولي العقود والاستشارات',
-    descEn: 'For legal consultants, law offices, and contract specialists',
+    badge: 'للمحامين والمستشارين',
+    badgeEn: 'For Lawyers & Counsel',
+    desc: 'لمكاتب المحاماة، المستشارين القانونيين، ومسؤولي العقود والاستشارات',
+    descEn: 'For law firms, legal consultants, and corporate counsel specialists',
     monthlyPrice: 249,
     annualPrice: 199,
     specs: {
-      docs: '300 مستند / شهر',
+      docs: '99 مستند / شهر',
       size: 'أقصى حجم: 50 ميجابايت',
       storage: 'مساحة تخزين: 10 جيجابايت',
       ai: 'تحليل الذكاء الاصطناعي: فائق السرعة',
-      questions: '2,000 سؤال للمستند',
+      questions: '400 سؤال للمستند',
     },
     features: [
-      '300 فحص مستند مع أقصى سرعة معالجة',
-      'تحليل عقود ضخمة ومعقدة متعددة الصفحات',
-      '2,000 استفسار ذكي متعمق في القانون المصري',
-      'تصدير تقارير رسمية باسم المكتب وبصمة تدقيق',
+      '99 فحص مستند مع أقصى سرعة معالجة قانونية',
+      'تحليل عقود ضخمة ومعقدة متعددة الأطراف والصفحات',
+      '400 استفسار ذكي متعمق ومستند لمواد القانون المصري',
+      'تصدير تقارير رسمية باسم المكتب وبصمة تدقيق معتمدة',
       'أرشفة سحابية مشفرة لـ 10GB',
       'دعم فني مخصص ذو أولوية عبر الواتساب',
     ],
     featuresEn: [
-      '300 Document audits with high-speed priority',
+      '99 Document audits with high-speed legal priority',
       'Deep multi-page complex contract breakdown',
-      '2,000 Deep legal inquiries under Egyptian law',
+      '400 Deep legal inquiries under Egyptian legislation',
       'Official branded PDF audit reports',
       '10GB Encrypted cloud storage',
       'Dedicated WhatsApp Priority Support',
@@ -191,31 +196,69 @@ const advancedPlans: PlanItem[] = [
     descEn: 'For enterprises, startups, and multi-user teams',
     monthlyPrice: 599,
     annualPrice: 479,
-    isDark: true,
     specs: {
-      docs: '1,000 مستند / شهر',
+      docs: '300 مستند / شهر',
       size: 'أقصى حجم: 100 ميجابايت',
       storage: 'مساحة تخزين: 50 جيجابايت',
-      ai: 'تحليل الذكاء الاصطناعي: فائق مع تكامل مخصص',
-      questions: '7,000 سؤال للمستند',
+      ai: 'تحليل الذكاء الاصطناعي: فائق مع تكامل مؤسسي',
+      questions: '1,200 سؤال للمستند',
     },
     features: [
-      '1,000 مستند شهرياً وسرعة معالجة قصوى وفورية',
+      '300 مستند شهرياً وسرعة معالجة قصوى وفورية',
       '5 حسابات لأعضاء الفريق (5 Team Seats)',
       'مساحة عمل مشتركة لمراجعة وتدقيق العقود كفريق',
       'سجلات التدقيق والأمان المتقدمة (Audit Logs)',
       'أرشفة سحابية ضخمة ومشفرة لـ 50GB',
-      '7,000 استفسار وسؤال شهرياً',
+      '1,200 استفسار وسؤال شهرياً',
       'مدير حساب قانوني ودعم فني مخصص على مدار الساعة',
     ],
     featuresEn: [
-      '1,000 Documents/mo with instant priority processing',
+      '300 Documents/mo with instant priority processing',
       '5 Team Member accounts included',
       'Shared collaborative workspace for contract audits',
       'Advanced Security & Audit Activity Logs',
       '50GB Encrypted enterprise cloud storage',
-      '7,000 Interactive monthly queries',
+      '1,200 Interactive monthly queries',
       'Dedicated 24/7 Account Manager & Support',
+    ],
+  },
+  {
+    id: 'enterprise-custom',
+    name: 'مخصص وسيرفر لوكال (On-Premise)',
+    nameEn: 'Custom On-Premise',
+    icon: '🛡️',
+    badge: 'سيرفر محلي خاص 🖥️',
+    badgeEn: 'Local Server & Air-Gapped',
+    desc: 'للشركات التي ترغب في تثبيت السيستم محلياً بالكامل مع الموديل الخاص وتخصيص كامل',
+    descEn: 'For organizations requiring private local server deployment & custom local AI model',
+    monthlyPrice: 0,
+    annualPrice: 0,
+    isCustom: true,
+    customPriceText: 'حسب الطلب',
+    customPriceTextEn: 'Custom Quote',
+    isDark: true,
+    specs: {
+      docs: 'فحص غير محدود (Unlimited)',
+      size: 'أقصى حجم: مفتوح بالكامل',
+      storage: 'سيرفر محلي خاص بالشركة',
+      ai: 'الموديل اللوكال الخاص (Dalil-Legal-LoRA)',
+      questions: 'أسئلة واستفسارات غير محدودة',
+    },
+    features: [
+      'تثبيت المنصة محلياً بالكامل على خوادم الشركة (On-Premise)',
+      'تشغيل الموديل اللوكال الخاص (Dalil-Legal-LoRA) لسرية تامة وعزل البيانات',
+      'التكلفة حسب متطلبات النظام وتكلفة السيرفر اللوكال',
+      'تخصيص كامل لقواعد الفحص ونماذج العقود (Custom Workflows)',
+      'فحوصات وعدد مقاعد مستخدمين غير محدود بدون قيود سحابية',
+      'فريق هندسي متخصص للتركيب والدعم الميداني وتحديثات الأوزان',
+    ],
+    featuresEn: [
+      'Full On-Premise private server installation',
+      'Proprietary Dalil-Legal-LoRA local model for maximum data privacy',
+      'Custom pricing based on requirements + local server infrastructure cost',
+      'Tailored legal audit rules and internal contract templates',
+      'Unlimited document audits and user seats',
+      'Dedicated engineering support, on-site setup & maintenance SLA',
     ],
   },
 ];
@@ -223,22 +266,23 @@ const advancedPlans: PlanItem[] = [
 const allPlans = [...mainPlans, ...advancedPlans];
 
 const comparisonRows = [
-  { label: 'عدد المستندات شهرياً', labelEn: 'Monthly Documents', vals: ['5 مستندات', '30 مستند', '100 مستند', '300 مستند', '1,000 مستند'] },
-  { label: 'الحد الأقصى لحجم الملف', labelEn: 'Max File Size', vals: ['10 MB', '20 MB', '30 MB', '50 MB', '100 MB'] },
-  { label: 'سعة التخزين السحابي', labelEn: 'Cloud Storage', vals: ['100 MB', '500 MB', '2 GB', '10 GB', '50 GB'] },
-  { label: 'مستوى فحص الذكاء الاصطناعي', labelEn: 'AI Analysis Level', vals: ['محدود', 'كامل', 'متقدم وشامل', 'فائق السرعة', 'فائق مع تكامل مؤسسي'] },
-  { label: 'أسئلة المستند التفاعلية', labelEn: 'AI Interactive Questions', vals: ['20 سؤال', '150 سؤال', '500 سؤال', '2,000 سؤال', '7,000 سؤال'] },
-  { label: 'دعم صيغ PDF و DOCX والصور', labelEn: 'PDF, DOCX & Images Support', vals: ['✅', '✅', '✅', '✅', '✅'] },
-  { label: 'ملخص شامل لأهم البنود', labelEn: 'Contract Summary', vals: ['✅', '✅', '✅', '✅', '✅'] },
-  { label: 'استخراج الأطراف والشروط بدقة', labelEn: 'Key Terms Extraction', vals: ['❌', '✅', '✅', '✅', '✅'] },
-  { label: 'فحص الشروط الجزائية والثغرات', labelEn: 'Advanced Risk & Penalty Audit', vals: ['❌', '❌', '✅', '✅', '✅'] },
-  { label: 'سجل وتاريخ المستندات السابقة', labelEn: 'Document History Access', vals: ['❌', '✅', '✅', '✅', '✅'] },
-  { label: 'تصدير وطباعة تقارير المراجعة PDF', labelEn: 'Export Printable PDF Report', vals: ['❌', '❌', '✅', '✅', '✅'] },
-  { label: 'أولوية قصوى في سرعة المعالجة', labelEn: 'Priority Processing Speed', vals: ['❌', '❌', '❌', '✅', '✅'] },
-  { label: 'عدد حسابات الفريق (Seats)', labelEn: 'Team Members (Seats)', vals: ['1', '1', '1', '1', '5'] },
-  { label: 'مساحة عمل مشتركة للفريق', labelEn: 'Shared Workspace', vals: ['❌', '❌', '❌', '❌', '✅'] },
-  { label: 'سجلات التدقيق والأمان (Audit Logs)', labelEn: 'Security Audit Logs', vals: ['❌', '❌', '❌', '❌', '✅'] },
-  { label: 'مستوى الدعم الفني', labelEn: 'Support Level', vals: ['مجتمعي', 'أساسي', 'أساسي سريع', 'أولوية عبر الواتساب', 'مدير حساب 24/7'] },
+  { label: 'عدد المستندات شهرياً', labelEn: 'Monthly Documents', vals: ['2 مستند', '10 مستندات', '30 مستند', '99 مستند', '300 مستند', 'غير محدود (Open)'] },
+  { label: 'الحد الأقصى لحجم الملف', labelEn: 'Max File Size', vals: ['10 MB', '20 MB', '30 MB', '50 MB', '100 MB', 'مفتوح بالكامل'] },
+  { label: 'سعة التخزين', labelEn: 'Storage', vals: ['100 MB', '500 MB', '2 GB', '10 GB', '50 GB', 'سيرفر محلي خاص'] },
+  { label: 'مستوى فحص الذكاء الاصطناعي', labelEn: 'AI Analysis Level', vals: ['محدود', 'كامل', 'متقدم وشامل', 'فائق السرعة', 'فائق وموسع', 'الموديل اللوكال الخاص مدمج محلياً'] },
+  { label: 'أسئلة المستند التفاعلية', labelEn: 'AI Interactive Questions', vals: ['5 أسئلة', '30 سؤال', '100 سؤال', '400 سؤال', '1,200 سؤال', 'غير محدود'] },
+  { label: 'دعم صيغ PDF و DOCX والصور', labelEn: 'PDF, DOCX & Images Support', vals: ['✅', '✅', '✅', '✅', '✅', '✅'] },
+  { label: 'ملخص شامل لأهم البنود', labelEn: 'Contract Summary', vals: ['✅', '✅', '✅', '✅', '✅', '✅'] },
+  { label: 'استخراج الأطراف والشروط بدقة', labelEn: 'Key Terms Extraction', vals: ['❌', '✅', '✅', '✅', '✅', '✅'] },
+  { label: 'فحص الشروط الجزائية والثغرات', labelEn: 'Advanced Risk & Penalty Audit', vals: ['❌', '❌', '✅', '✅', '✅', '✅'] },
+  { label: 'سجل وتاريخ المستندات السابقة', labelEn: 'Document History Access', vals: ['❌', '✅', '✅', '✅', '✅', '✅'] },
+  { label: 'تصدير وطباعة تقارير المراجعة PDF', labelEn: 'Export Printable PDF Report', vals: ['❌', '❌', '✅', '✅', '✅', '✅'] },
+  { label: 'أولوية قصوى في سرعة المعالجة', labelEn: 'Priority Processing Speed', vals: ['❌', '❌', '❌', '✅', '✅', '✅'] },
+  { label: 'عدد حسابات الفريق (Seats)', labelEn: 'Team Members (Seats)', vals: ['1', '1', '1', '1', '5', 'غير محدود'] },
+  { label: 'مساحة عمل مشتركة للفريق', labelEn: 'Shared Workspace', vals: ['❌', '❌', '❌', '❌', '✅', '✅'] },
+  { label: 'سجلات التدقيق والأمان (Audit Logs)', labelEn: 'Security Audit Logs', vals: ['❌', '❌', '❌', '❌', '✅', '✅'] },
+  { label: 'تثبيت محلي On-Premise + سيرفر لوكال', labelEn: 'Local Server On-Premise', vals: ['❌', '❌', '❌', '❌', '❌', '✅'] },
+  { label: 'مستوى الدعم الفني', labelEn: 'Support Level', vals: ['مجتمعي', 'أساسي', 'أساسي سريع', 'أولوية عبر الواتساب', 'مدير حساب 24/7', 'مهندس مخصص + SLA'] },
 ];
 
 export function PricingPage() {
@@ -311,7 +355,16 @@ export function PricingPage() {
           {/* Price */}
           <div className={`mt-5 border-b pb-5 ${plan.isDark ? 'border-white/10' : 'border-[#eee5da]'}`}>
             <div className="flex items-baseline gap-1.5">
-              {isFree ? (
+              {plan.isCustom ? (
+                <div>
+                  <span className={`font-display text-3xl font-extrabold ${plan.isDark ? 'text-[#e6c58e]' : 'text-[#3b241a]'}`}>
+                    {lang === 'ar' ? (plan.customPriceText || 'حسب الطلب') : (plan.customPriceTextEn || 'Custom Quote')}
+                  </span>
+                  <span className={`block mt-1 text-xs font-semibold ${plan.isDark ? 'text-[#dbcabb]' : 'text-[#8c694a]'}`}>
+                    {lang === 'ar' ? '+ تكلفة السيرفر اللوكال' : '+ Local Server Cost'}
+                  </span>
+                </div>
+              ) : isFree ? (
                 <span className={`font-display text-5xl font-extrabold ${plan.isDark ? 'text-[#fffdf9]' : 'text-[#3b241a]'}`}>
                   {lang === 'ar' ? 'مجاناً' : 'Free'}
                 </span>
@@ -329,7 +382,7 @@ export function PricingPage() {
                 </>
               )}
             </div>
-            {billingCycle === 'annual' && !isFree && (
+            {billingCycle === 'annual' && !isFree && !plan.isCustom && (
               <span className={`mt-1 block text-[11px] font-bold ${plan.isDark ? 'text-[#e6c58e]' : 'text-[#447052]'}`}>
                 {lang === 'ar' ? 'تم تطبيق خصم ٢٠٪ للدفع السنوي' : '20% annual discount applied'}
               </span>
@@ -390,7 +443,13 @@ export function PricingPage() {
             }`}
             data-testid={`btn-choose-${plan.id}`}
           >
-            {isFree ? (lang === 'ar' ? 'ابدأ الاستخدام مجاناً' : 'Get Started Free') : (lang === 'ar' ? 'اشترك في هذه الباقة' : 'Subscribe Now')}
+            {plan.isCustom ? (
+              lang === 'ar' ? 'طلب عرض سعر وسيرفر محلي' : 'Request On-Premise Quote'
+            ) : isFree ? (
+              lang === 'ar' ? 'ابدأ الاستخدام مجاناً' : 'Get Started Free'
+            ) : (
+              lang === 'ar' ? 'اشترك في هذه الباقة' : 'Subscribe Now'
+            )}
           </button>
         </div>
       </div>
@@ -472,7 +531,7 @@ export function PricingPage() {
           <span className="size-2 rounded-full bg-[#a36c42]" />
           {lang === 'ar' ? 'باقات الخبراء والشركات:' : 'Professional & Enterprise Plans:'}
         </h2>
-        <div className="grid gap-8 md:grid-cols-2 items-stretch">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 items-stretch">
           {advancedPlans.map(renderCard)}
         </div>
       </div>
@@ -510,7 +569,13 @@ export function PricingPage() {
                     <div className="text-2xl mb-1">{plan.icon}</div>
                     <div className="font-bold text-sm text-[#3b241a]">{lang === 'ar' ? plan.name : plan.nameEn}</div>
                     <div className="text-base font-extrabold text-[#a36c42] mt-1.5">
-                      {plan.monthlyPrice === 0 ? (lang === 'ar' ? 'مجاناً' : 'Free') : `${billingCycle === 'monthly' ? plan.monthlyPrice : plan.annualPrice} ${lang === 'ar' ? 'ج.م' : 'EGP'}`}
+                      {plan.isCustom ? (
+                        <span className="text-xs font-bold">{lang === 'ar' ? 'حسب الطلب' : 'Custom Quote'}</span>
+                      ) : plan.monthlyPrice === 0 ? (
+                        lang === 'ar' ? 'مجاناً' : 'Free'
+                      ) : (
+                        `${billingCycle === 'monthly' ? plan.monthlyPrice : plan.annualPrice} ${lang === 'ar' ? 'ج.م' : 'EGP'}`
+                      )}
                     </div>
                   </th>
                 ))}
@@ -560,7 +625,9 @@ export function PricingPage() {
             {!subscribeSuccess ? (
               <div>
                 <span className="text-xs font-bold text-[#a36c42]">
-                  {lang === 'ar' ? 'تأكيد الاشتراك في باقة دليل' : 'Subscription Confirmation'}
+                  {selectedPlan.isCustom
+                    ? (lang === 'ar' ? 'طلب تثبيت محلي وخاص' : 'On-Premise Deployment Request')
+                    : (lang === 'ar' ? 'تأكيد الاشتراك في باقة دليل' : 'Subscription Confirmation')}
                 </span>
                 <h2 className="mt-2 font-display text-2xl font-bold text-[#3b241a]">
                   {lang === 'ar' ? `باقة ${selectedPlan.name}` : `${selectedPlan.nameEn} Plan`}
@@ -568,67 +635,101 @@ export function PricingPage() {
 
                 {/* Plan Summary Box */}
                 <div className="mt-4 rounded-2xl bg-[#fdf7ef] border border-[#ddc8aa] p-5 text-center">
-                  <div className="text-xs font-bold text-[#8c694a] mb-1">
-                    {billingCycle === 'monthly' ? (lang === 'ar' ? 'اشتراك شهري' : 'Monthly Subscription') : (lang === 'ar' ? 'اشتراك سنوي (خصم ٢٠٪)' : 'Annual Subscription (20% Off)')}
-                  </div>
-                  <div className="text-3xl font-extrabold text-[#3b241a]">
-                    {billingCycle === 'monthly' ? selectedPlan.monthlyPrice : selectedPlan.annualPrice} {lang === 'ar' ? 'جنيه مصري' : 'EGP'}
-                    <span className="text-xs font-normal text-[#8c694a]"> / {lang === 'ar' ? 'شهر' : 'month'}</span>
-                  </div>
-                  <p className="mt-2 text-xs text-[#796c63]">
-                    {selectedPlan.specs.docs} · {selectedPlan.specs.questions}
-                  </p>
+                  {selectedPlan.isCustom ? (
+                    <>
+                      <div className="text-xs font-bold text-[#8c694a] mb-1">
+                        {lang === 'ar' ? 'سيرفر محلي خاص بالشركة' : 'Private On-Premise Server'}
+                      </div>
+                      <div className="text-2xl font-extrabold text-[#3b241a]">
+                        {lang === 'ar' ? 'حسب الطلب وتكلفة السيرفر' : 'Custom Quote + Server Cost'}
+                      </div>
+                      <p className="mt-2 text-xs text-[#796c63]">
+                        {lang === 'ar' ? 'فحص غير محدود · الموديل اللوكال الخاص Dalil-Legal-LoRA' : 'Unlimited Audits · Proprietary Local Model'}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-xs font-bold text-[#8c694a] mb-1">
+                        {billingCycle === 'monthly' ? (lang === 'ar' ? 'اشتراك شهري' : 'Monthly Subscription') : (lang === 'ar' ? 'اشتراك سنوي (خصم ٢٠٪)' : 'Annual Subscription (20% Off)')}
+                      </div>
+                      <div className="text-3xl font-extrabold text-[#3b241a]">
+                        {billingCycle === 'monthly' ? selectedPlan.monthlyPrice : selectedPlan.annualPrice} {lang === 'ar' ? 'جنيه مصري' : 'EGP'}
+                        <span className="text-xs font-normal text-[#8c694a]"> / {lang === 'ar' ? 'شهر' : 'month'}</span>
+                      </div>
+                      <p className="mt-2 text-xs text-[#796c63]">
+                        {selectedPlan.specs.docs} · {selectedPlan.specs.questions}
+                      </p>
+                    </>
+                  )}
                 </div>
 
-                {/* Payment Methods */}
-                <div className="mt-6">
-                  <label className="block text-xs font-bold text-[#5e5048] mb-3">
-                    {lang === 'ar' ? 'اختر طريقة الدفع:' : 'Select Payment Method:'}
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('wallet')}
-                      className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border p-3 text-xs font-bold transition ${
-                        paymentMethod === 'wallet'
-                          ? 'border-[#3b241a] bg-[#3b241a] text-[#fffdf9] shadow-sm'
-                          : 'border-[#ddcdbb] bg-white text-[#5e5048] hover:bg-[#fdf7ef]'
-                      }`}
-                    >
-                      <Smartphone size={18} />
-                      <span className="text-[11px]">{lang === 'ar' ? 'محافظ كاش' : 'E-Wallets'}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('fawry')}
-                      className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border p-3 text-xs font-bold transition ${
-                        paymentMethod === 'fawry'
-                          ? 'border-[#3b241a] bg-[#3b241a] text-[#fffdf9] shadow-sm'
-                          : 'border-[#ddcdbb] bg-white text-[#5e5048] hover:bg-[#fdf7ef]'
-                      }`}
-                    >
-                      <QrCode size={18} />
-                      <span className="text-[11px]">{lang === 'ar' ? 'فوري' : 'Fawry'}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('card')}
-                      className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border p-3 text-xs font-bold transition ${
-                        paymentMethod === 'card'
-                          ? 'border-[#3b241a] bg-[#3b241a] text-[#fffdf9] shadow-sm'
-                          : 'border-[#ddcdbb] bg-white text-[#5e5048] hover:bg-[#fdf7ef]'
-                      }`}
-                    >
-                      <CreditCard size={18} />
-                      <span className="text-[11px]">{lang === 'ar' ? 'بطاقة بنكية' : 'Card'}</span>
-                    </button>
+                {/* Payment Methods (only for standard paid plans) */}
+                {!selectedPlan.isCustom && (
+                  <div className="mt-6">
+                    <label className="block text-xs font-bold text-[#5e5048] mb-3">
+                      {lang === 'ar' ? 'اختر طريقة الدفع:' : 'Select Payment Method:'}
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('wallet')}
+                        className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border p-3 text-xs font-bold transition ${
+                          paymentMethod === 'wallet'
+                            ? 'border-[#3b241a] bg-[#3b241a] text-[#fffdf9] shadow-sm'
+                            : 'border-[#ddcdbb] bg-white text-[#5e5048] hover:bg-[#fdf7ef]'
+                        }`}
+                      >
+                        <Smartphone size={18} />
+                        <span className="text-[11px]">{lang === 'ar' ? 'محافظ كاش' : 'E-Wallets'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('fawry')}
+                        className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border p-3 text-xs font-bold transition ${
+                          paymentMethod === 'fawry'
+                            ? 'border-[#3b241a] bg-[#3b241a] text-[#fffdf9] shadow-sm'
+                            : 'border-[#ddcdbb] bg-white text-[#5e5048] hover:bg-[#fdf7ef]'
+                        }`}
+                      >
+                        <QrCode size={18} />
+                        <span className="text-[11px]">{lang === 'ar' ? 'فوري' : 'Fawry'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('card')}
+                        className={`flex flex-col items-center justify-center gap-1.5 rounded-xl border p-3 text-xs font-bold transition ${
+                          paymentMethod === 'card'
+                            ? 'border-[#3b241a] bg-[#3b241a] text-[#fffdf9] shadow-sm'
+                            : 'border-[#ddcdbb] bg-white text-[#5e5048] hover:bg-[#fdf7ef]'
+                        }`}
+                      >
+                        <CreditCard size={18} />
+                        <span className="text-[11px]">{lang === 'ar' ? 'بطاقة بنكية' : 'Card'}</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <form onSubmit={handleExecuteSubscribe} className="mt-5 space-y-3">
+                  {selectedPlan.isCustom && (
+                    <div>
+                      <label className="block text-xs font-bold text-[#5e5048]">
+                        {lang === 'ar' ? 'اسم المؤسسة / الشركة' : 'Company / Organization Name'}
+                      </label>
+                      <input
+                        required
+                        type="text"
+                        placeholder={lang === 'ar' ? 'مثال: شركة النور للاستشارات' : 'e.g. Acme Corp'}
+                        className="mt-1 w-full rounded-xl border border-[#ddcdbb] bg-[#fffdf9] p-3 text-sm text-[#3b241a] focus:border-[#a36c42] focus:outline-none"
+                      />
+                    </div>
+                  )}
+
                   <div>
                     <label className="block text-xs font-bold text-[#5e5048]">
-                      {lang === 'ar' ? 'رقم الهاتف / المحفظة' : 'Phone / Wallet Number'}
+                      {selectedPlan.isCustom
+                        ? (lang === 'ar' ? 'رقم الهاتف / الواتساب للتواصل' : 'Contact Phone / WhatsApp')
+                        : (lang === 'ar' ? 'رقم الهاتف / المحفظة' : 'Phone / Wallet Number')}
                     </label>
                     <input
                       required
@@ -645,7 +746,9 @@ export function PricingPage() {
                       className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#3b241a] py-3.5 text-sm font-bold text-[#fffdf9] transition hover:bg-[#533426] disabled:opacity-75"
                     >
                       {isSubscribing ? (
-                        <span>{lang === 'ar' ? 'جاري إتمام العملية...' : 'Processing...'}</span>
+                        <span>{lang === 'ar' ? 'جاري إرسال الطلب...' : 'Sending Request...'}</span>
+                      ) : selectedPlan.isCustom ? (
+                        <span>{lang === 'ar' ? 'إرسال طلب السيرفر والتسعير' : 'Submit On-Premise Request'}</span>
                       ) : (
                         <span>{lang === 'ar' ? 'تأكيد الدفع وتفعيل الباقة' : 'Confirm & Activate Plan'}</span>
                       )}
@@ -659,12 +762,18 @@ export function PricingPage() {
                   <CheckCircle2 size={36} />
                 </span>
                 <h3 className="font-display text-2xl font-bold text-[#3b241a] mb-2">
-                  {lang === 'ar' ? 'تم تفعيل الاشتراك بنجاح! 🎉' : 'Subscription Activated! 🎉'}
+                  {selectedPlan.isCustom
+                    ? (lang === 'ar' ? 'تم استلام طلبكم بنجاح! 🚀' : 'Request Received Successfully! 🚀')
+                    : (lang === 'ar' ? 'تم تفعيل الاشتراك بنجاح! 🎉' : 'Subscription Activated! 🎉')}
                 </h3>
                 <p className="text-xs leading-6 text-[#796c63] mb-6">
-                  {lang === 'ar'
-                    ? `تم تفعيل باقة (${selectedPlan.name}) لحسابك بنجاح. يمكنك الآن فحص مستنداتك واستخدام كافة الميزات فوراً.`
-                    : `${selectedPlan.nameEn} plan is now active on your account.`}
+                  {selectedPlan.isCustom
+                    ? (lang === 'ar'
+                        ? 'سيتواصل معكم الفريق الهندسي لتحديد مواصفات السيرفر اللوكال والـ Hardware المطلوب وتكلفة التثبيت والتخصيص.'
+                        : 'Our engineering team will contact you shortly to configure your local server specs and deployment quote.')
+                    : (lang === 'ar'
+                        ? `تم تفعيل باقة (${selectedPlan.name}) لحسابك بنجاح. يمكنك الآن فحص مستنداتك واستخدام كافة الميزات فوراً.`
+                        : `${selectedPlan.nameEn} plan is now active on your account.`)}
                 </p>
                 <button
                   type="button"

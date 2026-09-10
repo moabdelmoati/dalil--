@@ -23,7 +23,6 @@ import { PricingPage } from '@/pages/PricingPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { ConsultationsPage } from '@/pages/ConsultationsPage';
 import { AdminDashboardPage } from '@/pages/AdminDashboardPage';
-import { PresentationPage } from '@/pages/PresentationPage';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { AuthModal } from '@/components/AuthModal';
 import { RoleSelectionModal } from '@/components/RoleSelectionModal';
@@ -638,28 +637,22 @@ function Router() {
   const [location] = useLocation();
   return (
     <ErrorBoundary resetKey={location}>
-      <Switch>
-        <Route path="/presentation" component={PresentationPage} />
-        <Route path="/pitch" component={PresentationPage} />
-        <Route>
-          <Shell>
-            <Switch>
-              <Route path="/" component={Home} />
-              <Route path="/dashboard" component={Dashboard} />
-              <Route path="/services" component={Services} />
-              <Route path="/services/:id" component={ServiceDetail} />
-              <Route path="/analyze" component={AnalyzePage} />
-              <Route path="/contract" component={ContractPage} />
-              <Route path="/ask" component={AskPage} />
-              <Route path="/pricing" component={PricingPage} />
-              <Route path="/login" component={LoginPage} />
-              <Route path="/consultations" component={ConsultationsPage} />
-              <Route path="/admin" component={AdminDashboardPage} />
-              <Route component={NotFound} />
-            </Switch>
-          </Shell>
-        </Route>
-      </Switch>
+      <Shell>
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/services" component={Services} />
+          <Route path="/services/:id" component={ServiceDetail} />
+          <Route path="/analyze" component={AnalyzePage} />
+          <Route path="/contract" component={ContractPage} />
+          <Route path="/ask" component={AskPage} />
+          <Route path="/pricing" component={PricingPage} />
+          <Route path="/login" component={LoginPage} />
+          <Route path="/consultations" component={ConsultationsPage} />
+          <Route path="/admin" component={AdminDashboardPage} />
+          <Route component={NotFound} />
+        </Switch>
+      </Shell>
       <RoleSelectionModal />
     </ErrorBoundary>
   );
